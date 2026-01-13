@@ -17,6 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.io.path.absolutePathString
+import kotlin.io.path.createLinkPointingTo
 import kotlin.io.path.exists
 
 data class FfFlattenSourceConfig(

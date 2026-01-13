@@ -10,6 +10,7 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.kotlinSerialization)
+    alias(libs.plugins.buildConfig)
     alias(libs.plugins.sqldelight)
 }
 
@@ -55,6 +56,14 @@ kotlin {
     }
 }
 
+buildConfig {
+    packageName("love.forte.tools.ff")
+    className("FfBuildConfig")
+    useKotlinOutput()
+
+    buildConfigField("String", "APP_VERSION", "\"${project.version}\"")
+    buildConfigField("String", "REPO_URL", "\"https://github.com/ForteScarlet/file-flattener\"")
+}
 
 compose.desktop {
     application {
@@ -63,7 +72,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "love.forte.tools"
-            packageVersion = "1.0.0"
+            packageVersion = project.version.toString()
         }
     }
 }

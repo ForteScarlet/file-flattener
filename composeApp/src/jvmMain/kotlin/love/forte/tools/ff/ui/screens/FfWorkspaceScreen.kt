@@ -15,6 +15,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
+import androidx.compose.foundation.draganddrop.dragAndDropTarget
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Refresh
@@ -36,11 +39,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draganddrop.DragAndDropEvent
+import androidx.compose.ui.draganddrop.DragAndDropTarget
+import androidx.compose.ui.draganddrop.awtTransferable
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import love.forte.tools.ff.FfConstants
@@ -59,13 +67,16 @@ import love.forte.tools.ff.storage.FfRegistryStore
 import love.forte.tools.ff.ui.components.FfOutlinedButton
 import love.forte.tools.ff.ui.components.FfPrimaryButton
 import love.forte.tools.ff.ui.components.FfTertiaryButton
-import love.forte.tools.ff.ui.platform.FfDropEvents
 import love.forte.tools.ff.ui.platform.FfFileDialogs
 import love.forte.tools.ff.ui.workspace.FfDraftTask
 import love.forte.tools.ff.ui.workspace.FfManagedTargetEntry
 import love.forte.tools.ff.ui.workspace.FfScanState
 import love.forte.tools.ff.ui.workspace.FfWorkspaceLoader
 import java.awt.Desktop
+import java.awt.datatransfer.DataFlavor
+import java.awt.datatransfer.Transferable
+import java.io.File
+import java.net.URI
 import java.nio.file.InvalidPathException
 import java.nio.file.Path
 import java.util.UUID
@@ -280,22 +291,6 @@ fun FfWorkspaceScreen(
 
     LaunchedEffect(Unit) { reloadTargetsAsync() }
 
-    val isAddMode by rememberUpdatedState(addMode)
-    val isMigrating by rememberUpdatedState(migrationStartedAt != null && migrationFinishedAt == null)
-    LaunchedEffect(Unit) {
-        FfDropEvents.droppedDirectories.collect { dirs ->
-            if (isMigrating) {
-                globalMessage = "迁移进行中，暂不接受拖拽。"
-                return@collect
-            }
-            if (!isAddMode) {
-                globalMessage = "请先点击“新增”进入任务创建模式，再拖拽目录。"
-                return@collect
-            }
-            addSourceDirsAsync(dirs)
-        }
-    }
-
     Row(modifier = Modifier.fillMaxSize()) {
         // Left: managed targets list
         Column(modifier = Modifier.width(300.dp).fillMaxHeight().padding(12.dp)) {
@@ -372,6 +367,7 @@ fun FfWorkspaceScreen(
                             addSourceDirsAsync(picked)
                         }
                     },
+                    onDropSources = { dirs -> addSourceDirsAsync(dirs) },
                     onRemoveDraft = { id -> drafts.removeAll { it.id == id } },
                     onUpdateDraft = ::updateDraft,
                     onRunAll = ::startMigration,
@@ -379,11 +375,26 @@ fun FfWorkspaceScreen(
 
                 selectedTargetDir != null -> ManagedTargetPane(
                     entry = managedTargets.firstOrNull { it.targetDir.normalize() == selectedTargetDir?.normalize() },
-                    settings = settings,
-                    onOpen = onOpen@{
+                    onOpenTarget = onOpen@{
                         val target = selectedTargetDir ?: return@onOpen
                         runCatching { Desktop.getDesktop().open(target.toFile()) }
                             .onFailure { globalMessage = it.message ?: "无法打开目录" }
+                    },
+                    onOpenSources = onOpenSources@{
+                        val entry = managedTargets.firstOrNull { it.targetDir.normalize() == selectedTargetDir?.normalize() } ?: return@onOpenSources
+                        val sources = entry.sources
+                            .asSequence()
+                            .mapNotNull { runCatching { Path.of(it) }.getOrNull() }
+                            .distinctBy { it.toAbsolutePath().normalize().absolutePathString() }
+                            .toList()
+                        if (sources.isEmpty()) {
+                            globalMessage = "未找到可打开的源目录。"
+                            return@onOpenSources
+                        }
+                        sources.forEach { src ->
+                            runCatching { Desktop.getDesktop().open(src.toFile()) }
+                                .onFailure { globalMessage = it.message ?: "无法打开源目录：${src.fileName}" }
+                        }
                     },
                     onRemove = onRemove@{
                         val target = selectedTargetDir ?: return@onRemove
@@ -463,8 +474,8 @@ fun FfWorkspaceScreen(
 @Composable
 private fun ManagedTargetPane(
     entry: FfManagedTargetEntry?,
-    settings: FfAppSettings,
-    onOpen: () -> Unit,
+    onOpenTarget: () -> Unit,
+    onOpenSources: () -> Unit,
     onRemove: () -> Unit,
     onUpdate: () -> Unit,
 ) {
@@ -493,30 +504,63 @@ private fun ManagedTargetPane(
         )
 
         Spacer(modifier = Modifier.height(18.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FfPrimaryButton(text = "打开", onClick = onOpen, icon = Icons.Default.FolderOpen)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            FfOutlinedButton(text = "打开源目录", onClick = onOpenSources, icon = Icons.Default.FolderOpen)
+            FfPrimaryButton(text = "打开目标目录", onClick = onOpenTarget, icon = Icons.Default.FolderOpen)
             FfOutlinedButton(text = "移除", onClick = onRemove)
             FfOutlinedButton(text = "更新", onClick = onUpdate, icon = Icons.Default.Refresh)
         }
-
-        Spacer(modifier = Modifier.height(18.dp))
-        Text(
-            text = "任务并发上限：${settings.concurrencyLimit}（可在“配置”中调整）",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun AddModePane(
     drafts: List<FfDraftTask>,
     onPickSources: () -> Unit,
+    onDropSources: (List<Path>) -> Unit,
     onRemoveDraft: (String) -> Unit,
     onUpdateDraft: (String, (FfDraftTask) -> FfDraftTask) -> Unit,
     onRunAll: () -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxSize()) {
+    val onDropSourcesState by rememberUpdatedState(onDropSources)
+    var showDropHighlight by remember { mutableStateOf(false) }
+    val dragAndDropTarget = remember {
+        object : DragAndDropTarget {
+            override fun onStarted(event: DragAndDropEvent) {
+                showDropHighlight = true
+            }
+
+            override fun onEnded(event: DragAndDropEvent) {
+                showDropHighlight = false
+            }
+
+            override fun onDrop(event: DragAndDropEvent): Boolean {
+                val directories = extractDroppedDirectories(event.awtTransferable)
+                if (directories.isNotEmpty()) onDropSourcesState(directories)
+                return directories.isNotEmpty()
+            }
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .clip(RectangleShape)
+            .then(
+                if (showDropHighlight) {
+                    Modifier
+                        .border(BorderStroke(2.dp, MaterialTheme.colorScheme.primary), RectangleShape)
+                        .padding(6.dp)
+                } else {
+                    Modifier
+                },
+            )
+            .dragAndDropTarget(
+                shouldStartDragAndDrop = { event -> shouldAcceptExternalDrop(event) },
+                target = dragAndDropTarget,
+            ),
+    ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(text = "新增任务", style = MaterialTheme.typography.titleLarge)
             Spacer(modifier = Modifier.weight(1f))
@@ -532,7 +576,7 @@ private fun AddModePane(
         Card(modifier = Modifier.fillMaxWidth()) {
             Text(
                 modifier = Modifier.padding(12.dp),
-                text = "你也可以把目录直接拖拽到窗口里（仅新增模式生效）。",
+                text = "你可以把目录直接拖拽到右侧区域（新增模式）来快速添加源目录。",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -728,6 +772,60 @@ private fun parsePathOrNull(raw: String): Path? {
     } catch (_: InvalidPathException) {
         null
     }
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+private fun shouldAcceptExternalDrop(event: DragAndDropEvent): Boolean {
+    val transferable = runCatching { event.awtTransferable }.getOrNull() ?: return false
+    if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) return true
+    if (transferable.isDataFlavorSupported(DataFlavor.stringFlavor)) return true
+    return DataFlavor.selectBestTextFlavor(transferable.transferDataFlavors) != null
+}
+
+private fun extractDroppedDirectories(transferable: Transferable): List<Path> {
+    val byFileList = runCatching {
+        if (!transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) return@runCatching emptyList()
+        val files = transferable.getTransferData(DataFlavor.javaFileListFlavor) as? List<*>
+        files
+            .orEmpty()
+            .filterIsInstance<File>()
+            .asSequence()
+            .filter { it.isDirectory }
+            .map { it.toPath() }
+            .toList()
+    }.getOrElse { emptyList() }
+    if (byFileList.isNotEmpty()) return byFileList
+
+    val byString = runCatching {
+        val text = extractDroppedTextOrNull(transferable).orEmpty()
+        if (text.isBlank()) return@runCatching emptyList()
+        parseUriList(text)
+    }.getOrElse { emptyList() }
+    return byString
+}
+
+private fun extractDroppedTextOrNull(transferable: Transferable): String? {
+    return runCatching {
+        if (transferable.isDataFlavorSupported(DataFlavor.stringFlavor)) {
+            return@runCatching transferable.getTransferData(DataFlavor.stringFlavor) as? String
+        }
+
+        val best = DataFlavor.selectBestTextFlavor(transferable.transferDataFlavors) ?: return@runCatching null
+        best.getReaderForText(transferable).readText()
+    }.getOrNull()
+}
+
+private fun parseUriList(text: String): List<Path> {
+    return text
+        .lineSequence()
+        .map(String::trim)
+        .filter { it.isNotEmpty() && !it.startsWith("#") }
+        .mapNotNull { line -> runCatching { URI(line) }.getOrNull() }
+        .filter { it.scheme.equals("file", ignoreCase = true) }
+        .mapNotNull { uri -> runCatching { Path.of(uri) }.getOrNull() }
+        .filter { it.toFile().isDirectory }
+        .distinctBy { it.toAbsolutePath().normalize().absolutePathString() }
+        .toList()
 }
 
 private enum class FfMigrationTaskStatus { Pending, Running, Finished, Failed }

@@ -26,10 +26,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import love.forte.tools.ff.FfConstants
+import love.forte.tools.ff.FfDefaults
 import love.forte.tools.ff.storage.FfAppSettings
 import love.forte.tools.ff.storage.FfAppTheme
+import love.forte.tools.ff.storage.FfAppPaths
 import love.forte.tools.ff.ui.components.FfOutlinedButton
 import love.forte.tools.ff.ui.components.FfPrimaryButton
+import love.forte.tools.ff.ui.components.FfTertiaryButton
 import love.forte.tools.ff.ui.platform.FfFileDialogs
 import java.awt.Desktop
 import java.nio.file.InvalidPathException
@@ -46,6 +49,7 @@ fun FfConfigScreen(
     val scope = rememberCoroutineScope()
     var userDataDirText by remember(appDir) { mutableStateOf(appDir.absolutePathString()) }
     var userDataDirError by remember { mutableStateOf<String?>(null) }
+    val defaultUserDataDir = remember { FfAppPaths.defaultAppDir() }
 
     LaunchedEffect(appDir) { userDataDirError = null }
 
@@ -88,6 +92,11 @@ fun FfConfigScreen(
                     }
                 }
             })
+            FfTertiaryButton(text = "恢复默认", onClick = {
+                userDataDirText = defaultUserDataDir.absolutePathString()
+                userDataDirError = null
+                onUpdateUserDataDir(defaultUserDataDir)
+            })
             FfPrimaryButton(text = "应用", onClick = {
                 val raw = userDataDirText.trim()
                 if (raw.isEmpty()) {
@@ -116,7 +125,13 @@ fun FfConfigScreen(
 
         Spacer(modifier = Modifier.height(18.dp))
 
-        Text(text = "主题配色", style = MaterialTheme.typography.titleMedium)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(text = "主题配色", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.weight(1f))
+            FfTertiaryButton(text = "恢复默认", onClick = {
+                onUpdateSettings(settings.copy(theme = FfAppTheme.CherryRed))
+            })
+        }
         Spacer(modifier = Modifier.height(8.dp))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             ThemeOption(
@@ -137,7 +152,13 @@ fun FfConfigScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text(text = "并发上限", style = MaterialTheme.typography.titleMedium)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(text = "并发上限", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.weight(1f))
+            FfTertiaryButton(text = "恢复默认", onClick = {
+                onUpdateSettings(settings.copy(concurrencyLimit = FfDefaults.defaultConcurrencyLimit()))
+            })
+        }
         Text(
             text = "任务并发上限（以目标目录为单位）。默认使用 CPU 数量。",
             style = MaterialTheme.typography.bodySmall,

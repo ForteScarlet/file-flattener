@@ -19,7 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -40,6 +40,7 @@ import love.forte.tools.ff.ui.FfSharedKeys
 import love.forte.tools.ff.ui.ffSharedNavModifier
 import love.forte.tools.ff.ui.components.FfOutlinedButton
 import love.forte.tools.ff.ui.components.FfPrimaryButton
+import love.forte.tools.ff.FfBuildConfig
 import java.nio.file.Path
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -63,7 +64,7 @@ fun FfPanelScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBackToHome) {
-                Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "back")
+                Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "back")
             }
 
             Spacer(modifier = Modifier.width(8.dp))
@@ -127,8 +128,13 @@ fun FfPanelScreen(
         Row(
             modifier = Modifier.fillMaxWidth().height(44.dp).padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
         ) {
-            Text(text = "file-flattener", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                text = "file-flattener v${FfBuildConfig.APP_VERSION}",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
