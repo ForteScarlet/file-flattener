@@ -17,3 +17,9 @@ captures
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
+
+AGENTS.md
+CLAUDE.md
+.claude
+.compose-docs
+.tasks

@@ -11,6 +11,8 @@ kotlinx-serialization = "1.7.3"
 buildconfig = "6.0.7"
 # https://sqldelight.github.io/sqldelight/latest/multiplatform_sqlite/
 sqldelight = "2.2.1"
+# https://conveyor.hydraulic.dev/21.0/configs/maven-gradle/#gradle
+conveyor = "1.12"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -31,3 +33,4 @@ kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref =
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 buildConfig = { id = "com.github.gmazzo.buildconfig", version.ref = "buildconfig" }
 sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
+conveyor = { id = "dev.hydraulic.conveyor", version.ref = "conveyor" }

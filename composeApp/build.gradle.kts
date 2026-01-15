@@ -1,8 +1,5 @@
-import org.gradle.jvm.toolchain.JavaLanguageVersion
-import org.gradle.jvm.toolchain.JvmVendorSpec
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import kotlin.text.set
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -12,20 +9,21 @@ plugins {
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.buildConfig)
     alias(libs.plugins.sqldelight)
+    alias(libs.plugins.conveyor)
 }
 
 kotlin {
-    val ffJdkVendor = providers.gradleProperty("ff.jdkVendor").orNull ?: "JetBrains"
     jvmToolchain {
         languageVersion.set(JavaLanguageVersion.of(21))
-        vendor.set(JvmVendorSpec.matching(ffJdkVendor))
+        @Suppress("UnstableApiUsage")
+        vendor.set(JvmVendorSpec.JETBRAINS)
     }
     jvm {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_21)
         }
     }
-    
+
     sourceSets {
         commonMain.dependencies {
             implementation(compose.runtime)
