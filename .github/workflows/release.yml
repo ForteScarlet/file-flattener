@@ -1,0 +1,106 @@
+name: Release
+on:
+  push:
+    tags:
+      - 'v*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: true
+
+env:
+  CONVEYOR_VERSION: 21.0.0
+  CONVEYOR_ROOT_KEY: ${{ secrets.CONVEYOR_ROOT_KEY }}
+
+jobs:
+  release:
+    name: Build & publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: gradle/wrapper-validation-action@v3
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: jetbrains
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install Conveyor CLI
+        run: npm i -g --no-fund --no-audit @hydraulic/conveyor@${CONVEYOR_VERSION}
+
+      - name: Build packages + update site
+        shell: bash
+        run: |
+          set -euxo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          CONVEYOR_AGREE_TO_LICENSE=1 ./gradlew --no-daemon --stacktrace -PappVersion="$VERSION" conveyCi
+
+      - name: Upload build output (for debugging)
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: conveyor-site-and-packages
+          retention-days: 7
+          path: |
+            build/packages/**
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            build/packages/**/*.zip
+            build/packages/**/*.tar.gz
+            build/packages/**/*.deb
+            build/packages/**/*.msix
+            build/packages/**/*.appinstaller
+            build/packages/**/*.crt
+            build/packages/**/*.exe
+          body: |
+            ## 下载说明
+
+            推荐前往 [**下载页**](https://fortescarlet.github.io/file-flattener/download) 下载应用程序或安装包。
+
+            下述列表为自行下载包体时可能会用到的 Assets 信息说明。
+
+            | 文件 | 系统平台 | 类型/用途 |
+            |------|----------|----------|
+            | `file-flattener-*-windows-amd64.zip` | Windows | 免安装 |
+            | `file-flattener-*.x64.msix` + `file-flattener.appinstaller` | Windows | MSIX 安装/更新 |
+            | `file-flattener.exe` | Windows | 安装器 |
+            | `file-flattener-*-mac-*.zip` | macOS | 免安装（.app） |
+            | `file-flattener-*-linux-amd64.tar.gz` | Linux | 免安装 |
+            | `debian/*.deb` | Debian/Ubuntu | 安装包 |
+
+      - name: Prepare GitHub Pages content
+        run: touch build/packages/.nojekyll
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: build/packages
+
+  pages:
+    name: Deploy GitHub Pages
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
