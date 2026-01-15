@@ -18,11 +18,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+
+
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
+import androidx.compose.foundation.Image
 import androidx.compose.material3.IconButton
+import androidx.compose.ui.res.painterResource
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -64,7 +65,7 @@ fun FfPanelScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBackToHome) {
-                Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "back")
+                Image(painter = painterResource("drawable/ic_arrow_back.svg"), contentDescription = "back")
             }
 
             Spacer(modifier = Modifier.width(8.dp))
@@ -131,7 +132,7 @@ fun FfPanelScreen(
             horizontalArrangement = Arrangement.Center,
         ) {
             Text(
-                text = "file-flattener v${FfBuildConfig.APP_VERSION}",
+                text = "file-flattener v${FfBuildConfig.VERSION}",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

@@ -7,13 +7,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
+import androidx.compose.foundation.Image
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.dp
 
 private val FfButtonShape = RoundedCornerShape(10.dp)
@@ -27,7 +27,7 @@ fun FfPrimaryButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    icon: ImageVector? = null,
+    icon: Painter? = null,
 ) {
     Button(
         onClick = onClick,
@@ -37,7 +37,7 @@ fun FfPrimaryButton(
         contentPadding = FfButtonPadding,
     ) {
         if (icon != null) {
-            Icon(imageVector = icon, contentDescription = null)
+            Image(painter = icon, contentDescription = null)
             Spacer(modifier = Modifier.width(FfIconSpacer))
         }
         Text(text)
@@ -50,7 +50,7 @@ fun FfOutlinedButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    icon: ImageVector? = null,
+    icon: Painter? = null,
 ) {
     OutlinedButton(
         onClick = onClick,
@@ -61,7 +61,7 @@ fun FfOutlinedButton(
         colors = ButtonDefaults.outlinedButtonColors(),
     ) {
         if (icon != null) {
-            Icon(imageVector = icon, contentDescription = null)
+            Image(painter = icon, contentDescription = null)
             Spacer(modifier = Modifier.width(FfIconSpacer))
         }
         Text(text)
@@ -77,7 +77,7 @@ fun FfTertiaryButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    icon: ImageVector? = null,
+    icon: Painter? = null,
 ) {
     Button(
         onClick = onClick,
@@ -91,7 +91,7 @@ fun FfTertiaryButton(
         ),
     ) {
         if (icon != null) {
-            Icon(imageVector = icon, contentDescription = null)
+            Image(painter = icon, contentDescription = null)
             Spacer(modifier = Modifier.width(FfIconSpacer))
         }
         Text(text)

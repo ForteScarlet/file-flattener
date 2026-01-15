@@ -4,6 +4,7 @@ import org.gradle.api.file.ProjectLayout
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.*
+import org.gradle.process.ExecOperations
 import java.io.File
 import javax.inject.Inject
 
@@ -19,7 +20,8 @@ import javax.inject.Inject
  * ```
  */
 abstract class ConveyorExecTask @Inject constructor(
-    private val layout: ProjectLayout
+    private val layout: ProjectLayout,
+    private val execOperations: ExecOperations
 ) : DefaultTask() {
 
     init {
@@ -89,7 +91,7 @@ abstract class ConveyorExecTask @Inject constructor(
             addAll(extraArgs.get())
         }
 
-        project.exec {
+        execOperations.exec {
             workingDir(layout.projectDirectory)
             environment("JAVA_HOME", javaHome.absolutePath)
             commandLine(commandLineArgs)

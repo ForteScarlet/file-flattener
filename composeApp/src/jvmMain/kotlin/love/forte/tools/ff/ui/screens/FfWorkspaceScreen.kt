@@ -18,9 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.draganddrop.dragAndDropTarget
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FolderOpen
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.ui.res.painterResource
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -505,10 +503,10 @@ private fun ManagedTargetPane(
 
         Spacer(modifier = Modifier.height(18.dp))
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            FfOutlinedButton(text = "打开源目录", onClick = onOpenSources, icon = Icons.Default.FolderOpen)
-            FfPrimaryButton(text = "打开目标目录", onClick = onOpenTarget, icon = Icons.Default.FolderOpen)
+            FfOutlinedButton(text = "打开源目录", onClick = onOpenSources, icon = painterResource("drawable/ic_folder_open.svg"))
+            FfPrimaryButton(text = "打开目标目录", onClick = onOpenTarget, icon = painterResource("drawable/ic_folder_open.svg"))
             FfOutlinedButton(text = "移除", onClick = onRemove)
-            FfOutlinedButton(text = "更新", onClick = onUpdate, icon = Icons.Default.Refresh)
+            FfOutlinedButton(text = "更新", onClick = onUpdate, icon = painterResource("drawable/ic_refresh.svg"))
         }
     }
 }
@@ -564,7 +562,7 @@ private fun AddModePane(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(text = "新增任务", style = MaterialTheme.typography.titleLarge)
             Spacer(modifier = Modifier.weight(1f))
-            FfOutlinedButton(text = "添加源目录", onClick = onPickSources, icon = Icons.Default.FolderOpen)
+            FfOutlinedButton(text = "添加源目录", onClick = onPickSources, icon = painterResource("drawable/ic_folder_open.svg"))
             Spacer(modifier = Modifier.width(8.dp))
             FfPrimaryButton(text = "开始迁移", onClick = onRunAll)
         }

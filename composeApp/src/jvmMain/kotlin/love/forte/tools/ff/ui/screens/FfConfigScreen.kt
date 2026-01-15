@@ -7,10 +7,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FolderOpen
-import androidx.compose.material3.Icon
+import androidx.compose.foundation.Image
 import androidx.compose.material3.IconButton
+import androidx.compose.ui.res.painterResource
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -119,7 +118,7 @@ fun FfConfigScreen(
                 runCatching { Desktop.getDesktop().open(appDir.toFile()) }
                     .onFailure { userDataDirError = it.message ?: "无法打开目录" }
             }) {
-                Icon(imageVector = Icons.Default.FolderOpen, contentDescription = "open-user-data-dir")
+                Image(painter = painterResource("drawable/ic_folder_open.svg"), contentDescription = "open-user-data-dir")
             }
         }
 
