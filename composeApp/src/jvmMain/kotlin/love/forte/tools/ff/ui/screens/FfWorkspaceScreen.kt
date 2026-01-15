@@ -61,7 +61,7 @@ import love.forte.tools.ff.fs.FfMigrationTask
 import love.forte.tools.ff.fs.FfTargetValidation
 import love.forte.tools.ff.fs.FfTargetValidator
 import love.forte.tools.ff.storage.FfAppSettings
-import love.forte.tools.ff.storage.FfRegistryStore
+import love.forte.tools.ff.storage.FfRegistryStoreAdapter
 import love.forte.tools.ff.ui.components.FfOutlinedButton
 import love.forte.tools.ff.ui.components.FfPrimaryButton
 import love.forte.tools.ff.ui.components.FfTertiaryButton
@@ -83,7 +83,7 @@ import kotlin.io.path.absolutePathString
 @Composable
 fun FfWorkspaceScreen(
     appDir: Path,
-    registryStore: FfRegistryStore,
+    registryStoreAdapter: FfRegistryStoreAdapter,
     settings: FfAppSettings,
 ) {
     val scope = rememberCoroutineScope()
@@ -115,11 +115,11 @@ fun FfWorkspaceScreen(
 
     fun reloadTargetsAsync() {
         scope.launch {
-            val loaded = withContext(Dispatchers.IO) { registryStore.loadTargets() }
+            val loaded = withContext(Dispatchers.IO) { registryStoreAdapter.loadTargets() }
             val entries = withContext(Dispatchers.IO) { FfWorkspaceLoader.loadManagedTargets(loaded) }
             managedTargets = entries
             val valid = entries.map { it.targetDir }
-            if (valid.size != loaded.size) withContext(Dispatchers.IO) { registryStore.saveTargets(valid) }
+            if (valid.size != loaded.size) withContext(Dispatchers.IO) { registryStoreAdapter.saveTargets(valid) }
             if (selectedTargetDir != null && valid.none { it.normalize() == selectedTargetDir?.normalize() }) {
                 selectedTargetDir = null
             }
@@ -278,8 +278,8 @@ fun FfWorkspaceScreen(
                     .distinctBy { it.toAbsolutePath().normalize().absolutePathString() }
                     .toList()
                 if (targetsToAdd.isNotEmpty()) {
-                    val current = registryStore.loadTargets()
-                    registryStore.saveTargets(current + targetsToAdd)
+                    val current = registryStoreAdapter.loadTargets()
+                    registryStoreAdapter.saveTargets(current + targetsToAdd)
                 }
             }
             reloadTargetsAsync()
@@ -397,8 +397,8 @@ fun FfWorkspaceScreen(
                     onRemove = onRemove@{
                         val target = selectedTargetDir ?: return@onRemove
                         scope.launch(Dispatchers.IO) {
-                            val current = registryStore.loadTargets().filterNot { it.normalize() == target.normalize() }
-                            registryStore.saveTargets(current)
+                            val current = registryStoreAdapter.loadTargets().filterNot { it.normalize() == target.normalize() }
+                            registryStoreAdapter.saveTargets(current)
                             withContext(Dispatchers.Main) {
                                 selectedTargetDir = null
                                 reloadTargetsAsync()

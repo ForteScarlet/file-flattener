@@ -14,8 +14,8 @@ import androidx.compose.ui.unit.dp
 import love.forte.tools.ff.storage.FfAppTheme
 import org.jetbrains.compose.resources.Font
 
-import file_flattener.composeapp.generated.resources.Res
-import file_flattener.composeapp.generated.resources.LXGWNeoXiHeiScreen
+import love.forte.tools.file_flattener.composeapp.generated.resources.Res
+import love.forte.tools.file_flattener.composeapp.generated.resources.LXGWNeoXiHeiScreen
 
 private val CherryRedColors = lightColorScheme(
     primary = Color(0xFFE11D48),

@@ -35,7 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import love.forte.tools.ff.storage.FfAppSettings
-import love.forte.tools.ff.storage.FfRegistryStore
+import love.forte.tools.ff.storage.FfRegistryStoreAdapter
 import love.forte.tools.ff.ui.FfPanelTab
 import love.forte.tools.ff.ui.FfSharedKeys
 import love.forte.tools.ff.ui.ffSharedNavModifier
@@ -51,7 +51,7 @@ fun FfPanelScreen(
     animatedVisibilityScope: AnimatedVisibilityScope,
     initialTab: FfPanelTab,
     appDir: Path,
-    registryStore: FfRegistryStore,
+    registryStoreAdapter: FfRegistryStoreAdapter,
     settings: FfAppSettings,
     onUpdateSettings: (FfAppSettings) -> Unit,
     onUpdateUserDataDir: (Path) -> Unit,
@@ -113,7 +113,7 @@ fun FfPanelScreen(
             label = "panel-tab",
         ) { current ->
             when (current) {
-                FfPanelTab.Workspace -> FfWorkspaceScreen(appDir = appDir, registryStore = registryStore, settings = settings)
+                FfPanelTab.Workspace -> FfWorkspaceScreen(appDir = appDir, registryStoreAdapter = registryStoreAdapter, settings = settings)
                 FfPanelTab.Config -> FfConfigScreen(
                     appDir = appDir,
                     settings = settings,

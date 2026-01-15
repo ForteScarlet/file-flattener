@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -18,16 +19,19 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import love.forte.tools.ff.db.FfDatabaseInitState
+import love.forte.tools.ff.db.FfDatabaseManager
 import love.forte.tools.ff.storage.FfAppPaths
 import love.forte.tools.ff.storage.FfAppSettings
 import love.forte.tools.ff.storage.FfBootstrapSettings
 import love.forte.tools.ff.storage.FfBootstrapStore
-import love.forte.tools.ff.storage.FfRegistryStore
-import love.forte.tools.ff.storage.FfSettingsStore
+import love.forte.tools.ff.storage.FfRegistryStoreAdapter
+import love.forte.tools.ff.storage.FfSettingsStoreAdapter
 import love.forte.tools.ff.ui.screens.FfHomeScreen
 import love.forte.tools.ff.ui.screens.FfPanelScreen
 import love.forte.tools.ff.ui.theme.FfTheme
@@ -50,37 +54,66 @@ fun FfApp() {
     val bootstrapDir = remember { FfAppPaths.defaultAppDir() }
     val bootstrapStore = remember(bootstrapDir) { FfBootstrapStore(bootstrapDir) }
     val scope = rememberCoroutineScope()
+    val databaseManager = remember { FfDatabaseManager.getInstance() }
 
     var settings by remember { mutableStateOf(FfAppSettings()) }
     var navState by remember { mutableStateOf(FfNavState()) }
-    var userDataDir by remember { mutableStateOf(bootstrapDir) }
+    var userDataDir by remember { mutableStateOf<Path?>(null) }
+    var dbInitState by remember { mutableStateOf<FfDatabaseInitState>(FfDatabaseInitState.NotInitialized) }
 
-    val settingsStore = remember(userDataDir) { FfSettingsStore(userDataDir) }
-    val registryStore = remember(userDataDir) { FfRegistryStore(userDataDir) }
+    val settingsStoreAdapter = remember(userDataDir) {
+        userDataDir?.let { FfSettingsStoreAdapter.fromManager(databaseManager) }
+    }
+    val registryStoreAdapter = remember(userDataDir) {
+        userDataDir?.let { FfRegistryStoreAdapter.fromManager(databaseManager) }
+    }
 
     LaunchedEffect(Unit) {
+        // 第一步：读取引导设置
         val bootstrap = withContext(Dispatchers.IO) { bootstrapStore.load() }
         val resolved = bootstrap.userDataDir?.toAbsolutePath()?.normalize() ?: bootstrapDir
         userDataDir = resolved
     }
 
     LaunchedEffect(userDataDir) {
-        settings = withContext(Dispatchers.IO) { settingsStore.load() }
+        if (userDataDir == null) return@LaunchedEffect
+
+        // 第二步：初始化数据库
+        val initResult = withContext(Dispatchers.IO) {
+            databaseManager.initialize(userDataDir!!)
+        }
+        dbInitState = initResult
+
+        // 第三步：加载设置
+        if (initResult is FfDatabaseInitState.Ready) {
+            settings = databaseManager.settingsRepository.load()
+        }
     }
 
     fun updateSettings(newSettings: FfAppSettings) {
         settings = newSettings
-        scope.launch(Dispatchers.IO) { settingsStore.save(newSettings) }
+        scope.launch(Dispatchers.IO) {
+            databaseManager.settingsRepository.save(newSettings)
+        }
     }
 
     fun updateUserDataDir(newDir: Path) {
         val normalized = newDir.toAbsolutePath().normalize()
-        if (normalized == userDataDir.toAbsolutePath().normalize()) return
+        if (normalized == userDataDir?.toAbsolutePath()?.normalize()) return
         scope.launch(Dispatchers.IO) {
-            migrateAppDataIfNeeded(from = userDataDir, to = normalized)
+            migrateDatabaseIfNeeded(from = userDataDir, to = normalized)
             bootstrapStore.save(FfBootstrapSettings(userDataDir = normalized))
+
+            // 切换到新目录
+            val initResult = databaseManager.switchDataDir(normalized)
+            dbInitState = initResult
+
             withContext(Dispatchers.Main) {
                 userDataDir = normalized
+                // 重新加载设置
+                if (initResult is FfDatabaseInitState.Ready) {
+                    settings = databaseManager.settingsRepository.load()
+                }
             }
         }
     }
@@ -91,16 +124,40 @@ fun FfApp() {
             color = MaterialTheme.colorScheme.background,
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
-                RootSharedTransition(
-                    navState = navState,
-                    appDir = userDataDir,
-                    registryStore = registryStore,
-                    settings = settings,
-                    onUpdateSettings = ::updateSettings,
-                    onUpdateUserDataDir = ::updateUserDataDir,
-                    onBackToHome = { navState = navState.copy(route = FfRootRoute.Home) },
-                    onNavigate = { route, tab -> navState = navState.copy(route = route, panelTab = tab) },
-                )
+                when (dbInitState) {
+                    is FfDatabaseInitState.NotInitialized,
+                    is FfDatabaseInitState.Initializing -> {
+                        // 显示加载指示器
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                        }
+                    }
+
+                    is FfDatabaseInitState.Failed -> {
+                        // 显示错误信息
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            // TODO: 实现错误显示界面
+                            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                        }
+                    }
+
+                    is FfDatabaseInitState.Ready -> {
+                        val registryStoreAdapter = registryStoreAdapter
+                        val settingsStoreAdapter = settingsStoreAdapter
+                        if (registryStoreAdapter != null && settingsStoreAdapter != null && userDataDir != null) {
+                            RootSharedTransition(
+                                navState = navState,
+                                appDir = userDataDir!!,
+                                registryStoreAdapter = registryStoreAdapter,
+                                settings = settings,
+                                onUpdateSettings = ::updateSettings,
+                                onUpdateUserDataDir = ::updateUserDataDir,
+                                onBackToHome = { navState = navState.copy(route = FfRootRoute.Home) },
+                                onNavigate = { route, tab -> navState = navState.copy(route = route, panelTab = tab) },
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -114,7 +171,7 @@ private fun rootTransition(): ContentTransform =
 private fun RootSharedTransition(
     navState: FfNavState,
     appDir: Path,
-    registryStore: FfRegistryStore,
+    registryStoreAdapter: FfRegistryStoreAdapter,
     settings: FfAppSettings,
     onUpdateSettings: (FfAppSettings) -> Unit,
     onUpdateUserDataDir: (Path) -> Unit,
@@ -144,7 +201,7 @@ private fun RootSharedTransition(
                         animatedVisibilityScope = this,
                         initialTab = navState.panelTab,
                         appDir = appDir,
-                        registryStore = registryStore,
+                        registryStoreAdapter = registryStoreAdapter,
                         settings = settings,
                         onUpdateSettings = onUpdateSettings,
                         onUpdateUserDataDir = onUpdateUserDataDir,
@@ -156,24 +213,41 @@ private fun RootSharedTransition(
     }
 }
 
-private fun migrateAppDataIfNeeded(from: Path, to: Path) {
-    val source = from.toAbsolutePath().normalize()
+private suspend fun migrateDatabaseIfNeeded(from: Path?, to: Path) {
+    val source = from?.toAbsolutePath()?.normalize()
     val target = to.toAbsolutePath().normalize()
+
     if (source == target) return
     if (target.exists() && !target.isDirectory()) return
 
-    val filesToCopy = listOf(
-        FfAppPaths.registryFile(source),
-        FfAppPaths.settingsFile(source),
-    )
-
     Files.createDirectories(target)
-    for (file in filesToCopy) {
-        if (!file.exists()) continue
-        val dest = target.resolve(file.fileName.toString())
-        if (dest.exists()) continue
+
+    // 源目录可能不存在（全新安装）
+    if (source == null || !source.exists()) return
+
+    // 检查源目录是否有数据库文件
+    val sourceDb = source.resolve("ff_data.db")
+    val targetDb = target.resolve("ff_data.db")
+
+    if (!sourceDb.exists()) return
+    if (targetDb.exists()) return // 目标已存在数据库，不覆盖
+
+    // 复制数据库文件
+    runCatching {
+        Files.copy(sourceDb, targetDb)
+    }
+
+    // 如果存在备份的旧文件，也复制它们（可选）
+    val sourceBackups = source.toFile().listFiles { file ->
+        file.name.matches(Regex(".*\\.bak\\.\\d+$"))
+    } ?: emptyArray()
+
+    sourceBackups.forEach { backup ->
         runCatching {
-            Files.copy(file, dest)
+            val destBackup = target.resolve(backup.name)
+            if (!destBackup.exists()) {
+                Files.copy(backup.toPath(), destBackup)
+            }
         }
     }
 }

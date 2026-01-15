@@ -7,7 +7,7 @@ import love.forte.tools.ff.FfBuildConfig
 fun main() = application {
     Window(
         onCloseRequest = ::exitApplication,
-        title = "file-flattener v${FfBuildConfig.APP_VERSION}",
+        title = "file-flattener v${FfBuildConfig.VERSION}",
     ) {
         App()
     }

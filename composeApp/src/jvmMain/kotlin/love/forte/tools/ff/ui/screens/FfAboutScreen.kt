@@ -31,7 +31,7 @@ fun FfAboutScreen() {
         Text(text = "版本", style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(6.dp))
         Text(
-            text = FfBuildConfig.APP_VERSION,
+            text = FfBuildConfig.VERSION,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -42,13 +42,13 @@ fun FfAboutScreen() {
         Row(modifier = Modifier.fillMaxWidth()) {
             Text(
                 modifier = Modifier.weight(1f),
-                text = FfBuildConfig.REPO_URL,
+                text = FfBuildConfig.GITHUB_URL,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(modifier = Modifier.width(8.dp))
             FfOutlinedButton(text = "打开", onClick = {
-                runCatching { Desktop.getDesktop().browse(URI(FfBuildConfig.REPO_URL)) }
+                runCatching { Desktop.getDesktop().browse(URI(FfBuildConfig.GITHUB_URL)) }
             })
         }
 
