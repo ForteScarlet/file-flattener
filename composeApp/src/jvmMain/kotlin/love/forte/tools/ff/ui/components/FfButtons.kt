@@ -19,7 +19,9 @@ import androidx.compose.ui.unit.dp
 
 private val FfButtonShape = RoundedCornerShape(10.dp)
 private val FfButtonPadding = PaddingValues(horizontal = 18.dp, vertical = 12.dp)
+// private val FfButtonPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
 private val FfButtonMinHeight = 46.dp
+// private val FfButtonMinHeight = 6.dp
 private val FfIconSpacer = 8.dp
 
 @Composable

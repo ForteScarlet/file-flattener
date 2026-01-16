@@ -28,6 +28,7 @@ data class FfDraftTask(
     val selectedExtensions: Set<String> = emptySet(),
     val runState: FfRunState = FfRunState.Idle,
     val errorMessage: String? = null,
+    val expanded: Boolean = true,
 )
 
 data class FfManagedTargetEntry(

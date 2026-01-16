@@ -1,11 +1,14 @@
 package love.forte.tools.ff.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +23,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
@@ -321,39 +325,49 @@ fun FfWorkspaceScreen(
             HorizontalDivider()
             Spacer(modifier = Modifier.height(10.dp))
 
-            Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                if (managedTargets.isEmpty()) {
-                    Text(
-                        text = "暂无记录在案的目标目录",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                managedTargets.forEach { entry ->
-                    val selected = selectedTargetDir?.normalize() == entry.targetDir.normalize()
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick = {
-                            selectedTargetDir = entry.targetDir
-                            addMode = false
-                        },
-                    ) {
-                        Column(modifier = Modifier.padding(10.dp)) {
-                            Text(
-                                text = entry.targetDir.fileName?.toString() ?: entry.targetDir.absolutePathString(),
-                                style = MaterialTheme.typography.titleSmall,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                            )
-                            Text(
-                                text = "${entry.fileCount} 个文件",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+            Box(modifier = Modifier.fillMaxSize()) {
+                val scrollState = rememberScrollState()
+                Column(
+                    modifier = Modifier.fillMaxSize().verticalScroll(scrollState),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    if (managedTargets.isEmpty()) {
+                        Text(
+                            text = "暂无记录在案的目标目录",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    managedTargets.forEach { entry ->
+                        val selected = selectedTargetDir?.normalize() == entry.targetDir.normalize()
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = {
+                                selectedTargetDir = entry.targetDir
+                                addMode = false
+                            },
+                        ) {
+                            Column(modifier = Modifier.padding(10.dp)) {
+                                Text(
+                                    text = entry.targetDir.fileName?.toString() ?: entry.targetDir.absolutePathString(),
+                                    style = MaterialTheme.typography.titleSmall,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                )
+                                Text(
+                                    text = "${entry.fileCount} 个文件",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                         }
                     }
                 }
+                VerticalScrollbar(
+                    modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                    adapter = rememberScrollbarAdapter(scrollState),
+                )
             }
         }
 
@@ -496,37 +510,44 @@ private fun ManagedTargetPane(
         return
     }
 
-    Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        Text(text = "目标目录", style = MaterialTheme.typography.titleLarge)
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(text = entry.targetDir.absolutePathString(), style = MaterialTheme.typography.bodyMedium)
-        Spacer(modifier = Modifier.height(12.dp))
-        Text(text = "文件数：${entry.fileCount}", style = MaterialTheme.typography.bodyMedium)
+    Box(modifier = Modifier.fillMaxSize()) {
+        val scrollState = rememberScrollState()
+        Column(modifier = Modifier.fillMaxSize().verticalScroll(scrollState)) {
+            Text(text = "目标目录", style = MaterialTheme.typography.titleLarge)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(text = entry.targetDir.absolutePathString(), style = MaterialTheme.typography.bodyMedium)
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(text = "文件数：${entry.fileCount}", style = MaterialTheme.typography.bodyMedium)
 
-        Spacer(modifier = Modifier.height(12.dp))
-        Text(text = "源目录", style = MaterialTheme.typography.titleMedium)
-        entry.sources.forEach { Text(text = it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(text = "源目录", style = MaterialTheme.typography.titleMedium)
+            entry.sources.forEach { Text(text = it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
 
-        Spacer(modifier = Modifier.height(12.dp))
-        Text(text = "扩展名", style = MaterialTheme.typography.titleMedium)
-        Text(
-            text = entry.extensions.joinToString(),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
-        Spacer(modifier = Modifier.height(18.dp))
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            FfOutlinedButton(text = "打开源目录", onClick = onOpenSources, icon = painterResource(Res.drawable.ic_folder_open))
-            FfPrimaryButton(text = "打开目标目录", onClick = onOpenTarget, icon = painterResource(Res.drawable.ic_folder_open))
-            FfOutlinedButton(text = "移除", onClick = onRemove, enabled = !isUpdating)
-            FfOutlinedButton(
-                text = if (isUpdating) "更新中…" else "更新",
-                onClick = onUpdate,
-                icon = painterResource(Res.drawable.ic_refresh),
-                enabled = !isUpdating,
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(text = "扩展名", style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = entry.extensions.joinToString(),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+
+            Spacer(modifier = Modifier.height(18.dp))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                FfOutlinedButton(text = "打开源目录", onClick = onOpenSources, icon = painterResource(Res.drawable.ic_folder_open))
+                FfPrimaryButton(text = "打开目标目录", onClick = onOpenTarget, icon = painterResource(Res.drawable.ic_folder_open))
+                FfOutlinedButton(text = "移除", onClick = onRemove, enabled = !isUpdating)
+                FfOutlinedButton(
+                    text = if (isUpdating) "更新中…" else "更新",
+                    onClick = onUpdate,
+                    icon = painterResource(Res.drawable.ic_refresh),
+                    enabled = !isUpdating,
+                )
+            }
         }
+        VerticalScrollbar(
+            modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+            adapter = rememberScrollbarAdapter(scrollState),
+        )
     }
 }
 
@@ -634,18 +655,25 @@ private fun AddModePane(
             return
         }
 
-        Column(
-            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            drafts.forEach { draft ->
-                DraftCard(
-                    draft = draft,
-                    onRemove = { onRemoveDraft(draft.id) },
-                    onUpdate = { transform -> onUpdateDraft(draft.id, transform) },
-                )
+        Box(modifier = Modifier.fillMaxSize()) {
+            val scrollState = rememberScrollState()
+            Column(
+                modifier = Modifier.fillMaxSize().verticalScroll(scrollState),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                drafts.forEach { draft ->
+                    DraftCard(
+                        draft = draft,
+                        onRemove = { onRemoveDraft(draft.id) },
+                        onUpdate = { transform -> onUpdateDraft(draft.id, transform) },
+                    )
+                }
+                Spacer(modifier = Modifier.height(14.dp))
             }
-            Spacer(modifier = Modifier.height(14.dp))
+            VerticalScrollbar(
+                modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                adapter = rememberScrollbarAdapter(scrollState),
+            )
         }
     }
 }
@@ -666,6 +694,7 @@ private fun DraftCard(
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            // 头部：始终显示源目录、目标目录、展开/折叠、移除
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
@@ -682,61 +711,86 @@ private fun DraftCard(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
+                    // 折叠时显示目标目录信息
+                    if (!draft.expanded && draft.targetDir != null) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "→ ${draft.targetDir.absolutePathString()}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
                 Spacer(modifier = Modifier.width(8.dp))
+                FfTertiaryButton(
+                    text = if (draft.expanded) "折叠" else "展开",
+                    onClick = { onUpdate { it.copy(expanded = !it.expanded) } },
+                )
+                Spacer(modifier = Modifier.width(4.dp))
                 FfOutlinedButton(text = "移除", onClick = onRemove)
             }
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+            // 展开时显示详细内容
+            AnimatedVisibility(
+                visible = draft.expanded,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically(),
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
 
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
-                value = draft.targetPathText,
-                onValueChange = { raw ->
-                    val parsed = parsePathOrNull(raw)
-                    val validation = parsed?.let { FfTargetValidator.validate(it) }
-                    onUpdate {
-                        it.copy(
-                            targetPathText = raw,
-                            targetDir = parsed,
-                            targetValidation = validation,
+                    OutlinedTextField(
+                        modifier = Modifier.fillMaxWidth(),
+                        value = draft.targetPathText,
+                        onValueChange = { raw ->
+                            val parsed = parsePathOrNull(raw)
+                            val validation = parsed?.let { FfTargetValidator.validate(it) }
+                            onUpdate {
+                                it.copy(
+                                    targetPathText = raw,
+                                    targetDir = parsed,
+                                    targetValidation = validation,
+                                )
+                            }
+                        },
+                        label = { Text("目标目录（可输入不存在路径）") },
+                        singleLine = true,
+                    )
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        FfOutlinedButton(text = "选择目标", onClick = {
+                            scope.launch {
+                                val picked = FfFileDialogs.pickDirectory("选择目标目录")
+                                if (picked != null) {
+                                    val validation = withContext(Dispatchers.IO) { FfTargetValidator.validate(picked) }
+                                    onUpdate { it.copy(targetPathText = picked.absolutePathString(), targetDir = picked, targetValidation = validation) }
+                                }
+                            }
+                        })
+                        TargetValidationHint(draft.targetValidation)
+                    }
+
+                    when (val state = draft.scanState) {
+                        FfScanState.Idle -> Text(text = "等待扫描…", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        FfScanState.Scanning -> Text(text = "扫描中…", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        is FfScanState.Failed -> Text(text = "扫描失败：${state.message}", color = MaterialTheme.colorScheme.error)
+                        is FfScanState.Done -> ExtensionsSelector(
+                            stats = state.extensionStats,
+                            selected = draft.selectedExtensions,
+                            onSelectAll = { onUpdate { it.copy(selectedExtensions = state.extensionStats.keys.toSet()) } },
+                            onClear = { onUpdate { it.copy(selectedExtensions = emptySet()) } },
+                            onToggle = { ext ->
+                                onUpdate {
+                                    val next = it.selectedExtensions.toMutableSet()
+                                    if (!next.add(ext)) next.remove(ext)
+                                    it.copy(selectedExtensions = next)
+                                }
+                            },
                         )
                     }
-                },
-                label = { Text("目标目录（可输入不存在路径）") },
-                singleLine = true,
-            )
-
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                FfOutlinedButton(text = "选择目标", onClick = {
-                    scope.launch {
-                        val picked = FfFileDialogs.pickDirectory("选择目标目录")
-                        if (picked != null) {
-                            val validation = withContext(Dispatchers.IO) { FfTargetValidator.validate(picked) }
-                            onUpdate { it.copy(targetPathText = picked.absolutePathString(), targetDir = picked, targetValidation = validation) }
-                        }
-                    }
-                })
-                TargetValidationHint(draft.targetValidation)
-            }
-
-            when (val state = draft.scanState) {
-                FfScanState.Idle -> Text(text = "等待扫描…", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                FfScanState.Scanning -> Text(text = "扫描中…", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                is FfScanState.Failed -> Text(text = "扫描失败：${state.message}", color = MaterialTheme.colorScheme.error)
-                is FfScanState.Done -> ExtensionsSelector(
-                    stats = state.extensionStats,
-                    selected = draft.selectedExtensions,
-                    onSelectAll = { onUpdate { it.copy(selectedExtensions = state.extensionStats.keys.toSet()) } },
-                    onClear = { onUpdate { it.copy(selectedExtensions = emptySet()) } },
-                    onToggle = { ext ->
-                        onUpdate {
-                            val next = it.selectedExtensions.toMutableSet()
-                            if (!next.add(ext)) next.remove(ext)
-                            it.copy(selectedExtensions = next)
-                        }
-                    },
-                )
+                }
             }
         }
     }
@@ -954,14 +1008,21 @@ private fun MigrationPane(
         HorizontalDivider()
         Spacer(modifier = Modifier.height(10.dp))
 
-        Column(
-            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            tasks.forEach { task ->
-                MigrationTaskCard(task = task)
+        Box(modifier = Modifier.fillMaxSize()) {
+            val scrollState = rememberScrollState()
+            Column(
+                modifier = Modifier.fillMaxSize().verticalScroll(scrollState),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                tasks.forEach { task ->
+                    MigrationTaskCard(task = task)
+                }
+                Spacer(modifier = Modifier.height(14.dp))
             }
-            Spacer(modifier = Modifier.height(14.dp))
+            VerticalScrollbar(
+                modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                adapter = rememberScrollbarAdapter(scrollState),
+            )
         }
     }
 }
