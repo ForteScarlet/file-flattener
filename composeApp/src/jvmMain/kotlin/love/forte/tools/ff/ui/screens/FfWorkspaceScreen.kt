@@ -874,7 +874,7 @@ private fun MigrationPane(
             Text(text = if (allDone) "迁移完成" else "迁移进行中", style = MaterialTheme.typography.titleLarge)
             Spacer(modifier = Modifier.weight(1f))
             if (allDone) {
-                FfOutlinedButton(text = "返回新增", onClick = onBack)
+                FfOutlinedButton(text = "返回", onClick = onBack)
             }
         }
 

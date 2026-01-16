@@ -12,6 +12,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.flow
 import love.forte.tools.ff.FfBuildConfig
 import love.forte.tools.ff.ui.components.FfOutlinedButton
 import love.forte.tools.file_flattener.composeapp.generated.resources.Res
@@ -19,11 +22,32 @@ import love.forte.tools.file_flattener.composeapp.generated.resources.icon
 import org.jetbrains.compose.resources.painterResource
 import java.awt.Desktop
 import java.net.URI
+import kotlin.time.Duration.Companion.seconds
+
+private data class RuntimeMemoryState(
+    val freeMemory: Long,
+    val totalMemory: Long,
+)
+
+private fun Runtime.memoryState(): RuntimeMemoryState {
+    return RuntimeMemoryState(
+        freeMemory = freeMemory(),
+        totalMemory = totalMemory(),
+    )
+}
 
 @Composable
 fun FfAboutScreen() {
     var showSystemPropertiesWindow by remember { mutableStateOf(false) }
     var showEnvVariablesWindow by remember { mutableStateOf(false) }
+    val availableProcessors = remember { Runtime.getRuntime().availableProcessors() }
+
+    val memoryState by flow {
+        while (true) {
+            delay(3.seconds)
+            emit(Runtime.getRuntime().memoryState())
+        }
+    }.collectAsStateWithLifecycle(Runtime.getRuntime().memoryState())
 
     Column(
         modifier = Modifier
@@ -66,16 +90,16 @@ fun FfAboutScreen() {
         Spacer(modifier = Modifier.height(12.dp))
         Text(text = "运行时", style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(6.dp))
-        val runtime = Runtime.getRuntime()
+
         val javaInfo = "${System.getProperty("java.vm.name")} ${System.getProperty("java.runtime.version")}"
         val osInfo =
             "${System.getProperty("os.name")} ${System.getProperty("os.version")} (${System.getProperty("os.arch")})"
         Text(
-            text = "Java：$javaInfo\n系统：$osInfo\nCPU：${runtime.availableProcessors()} 核\n内存：${formatBytes(runtime.totalMemory())} / ${
-                formatBytes(
-                    runtime.maxMemory()
-                )
-            }（已分配/最大）",
+            text = "Java：$javaInfo\n" +
+                    "系统：$osInfo\n" +
+                    "CPU：$availableProcessors 核\n" +
+                    "内存：${formatBytes(memoryState.freeMemory)} / ${formatBytes(memoryState.totalMemory)}" +
+                    "（已使用/已分配）",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
