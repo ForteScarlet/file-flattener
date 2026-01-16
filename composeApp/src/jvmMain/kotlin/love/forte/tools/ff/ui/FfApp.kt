@@ -21,6 +21,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -49,6 +50,7 @@ data class FfNavState(
     val panelTab: FfPanelTab = FfPanelTab.Workspace,
 )
 
+@Preview
 @Composable
 fun FfApp(onExit: () -> Unit = {}) {
     val bootstrapDir = remember { FfAppPaths.defaultAppDir() }
@@ -221,7 +223,7 @@ private fun RootSharedTransition(
     }
 }
 
-private suspend fun migrateDatabaseIfNeeded(from: Path?, to: Path) {
+private fun migrateDatabaseIfNeeded(from: Path?, to: Path) {
     val source = from?.toAbsolutePath()?.normalize()
     val target = to.toAbsolutePath().normalize()
 
