@@ -1,6 +1,6 @@
 # 目录平铺助手
 
-![](icon.svg)
+<img src="icon.svg" alt="目录平铺助手图标" height="128">
 
 **中文** | [English](README.md)
 

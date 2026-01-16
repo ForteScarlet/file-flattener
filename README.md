@@ -1,6 +1,6 @@
 # FileFlattener
 
-![](icon.svg)
+<img src="icon.svg" alt="FileFlattener Icon" height="128">
 
 [中文](README_CN.md) | **English**
 
