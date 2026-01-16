@@ -1,7 +1,5 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import java.time.Year
-import java.time.ZoneId
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -57,6 +55,15 @@ kotlin {
     }
 }
 
+dependencies {
+    linuxAmd64("org.jetbrains.compose.desktop:desktop-jvm-linux-x64:${libs.versions.compose.get()}")
+    linuxAarch64("org.jetbrains.compose.desktop:desktop-jvm-linux-arm64:${libs.versions.compose.get()}")
+    windowsAmd64("org.jetbrains.compose.desktop:desktop-jvm-windows-x64:${libs.versions.compose.get()}")
+    windowsAarch64("org.jetbrains.compose.desktop:desktop-jvm-windows-arm64:${libs.versions.compose.get()}")
+    macAmd64("org.jetbrains.compose.desktop:desktop-jvm-macos-x64:${libs.versions.compose.get()}")
+    macAarch64("org.jetbrains.compose.desktop:desktop-jvm-macos-arm64:${libs.versions.compose.get()}")
+}
+
 buildConfig {
     packageName("love.forte.tools.ff")
     className("FfBuildConfig")
@@ -92,19 +99,20 @@ compose.desktop {
             packageVersion = appVersion
             vendor = AppConfig.Meta.VENDOR
             description = AppConfig.Meta.DESCRIPTION
+
             copyright =
-                "Copyright © 2024-${Year.now(ZoneId.of("Asia/Shanghai")).value} ${AppConfig.Meta.VENDOR}. All rights reserved."
+                "Copyright © 2026 ${AppConfig.Meta.VENDOR}. All rights reserved."
 
             linux {
                 shortcut = true
                 menuGroup = AppConfig.APP_MENU_GROUP
-                iconFile.set(project.rootDir.resolve("icon.png"))
+                // TODO iconFile.set(project.rootDir.resolve("icon.png"))
                 debMaintainer = AppConfig.Meta.DEB_MAINTAINER
             }
 
             macOS {
                 bundleID = AppConfig.appNameWithPackage
-                iconFile.set(project.rootDir.resolve("icon.icns"))
+                // TODO iconFile.set(project.rootDir.resolve("icon.icns"))
             }
 
             windows {
@@ -113,7 +121,7 @@ compose.desktop {
                 menuGroup = AppConfig.APP_MENU_GROUP
                 perUserInstall = true
                 menu = true
-                iconFile.set(project.rootDir.resolve("icon.ico"))
+                // TODO iconFile.set(project.rootDir.resolve("icon.ico"))
                 upgradeUuid = AppConfig.Meta.WINDOWS_UPGRADE_UUID
             }
         }
@@ -139,13 +147,14 @@ sqldelight {
 
 // https://conveyor.hydraulic.dev/21.0/configs/maven-gradle/#gradle
 tasks.register<ConveyorExecTask>("convey") {
-    dependsOn("jar", "writeConveyorConfig")
+    dependsOn("jvmJar", "writeConveyorConfig")
     description = "执行 Conveyor 本地打包"
+    configFile.set(rootDir.resolve("conveyor.conf"))
 }
 
 tasks.register<ConveyorExecTask>("conveyCi") {
-    dependsOn("jar", "writeConveyorConfig")
+    dependsOn("jvmJar", "writeConveyorConfig")
     description = "执行 Conveyor CI 打包"
-    configFile.set("ci.conveyor.conf")
+    configFile.set(rootDir.resolve("ci.conveyor.conf"))
 }
 

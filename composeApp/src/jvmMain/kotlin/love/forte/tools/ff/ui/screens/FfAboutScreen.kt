@@ -1,5 +1,6 @@
 package love.forte.tools.ff.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -13,6 +14,9 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import love.forte.tools.ff.FfBuildConfig
 import love.forte.tools.ff.ui.components.FfOutlinedButton
+import love.forte.tools.file_flattener.composeapp.generated.resources.Res
+import love.forte.tools.file_flattener.composeapp.generated.resources.icon
+import org.jetbrains.compose.resources.painterResource
 import java.awt.Desktop
 import java.net.URI
 
@@ -28,6 +32,8 @@ fun FfAboutScreen() {
             .padding(16.dp)
     ) {
         Text(text = "关于", style = MaterialTheme.typography.headlineSmall)
+        Spacer(modifier = Modifier.height(12.dp))
+        Image(painterResource(Res.drawable.icon), "Logo")
         Spacer(modifier = Modifier.height(12.dp))
         Text(
             text = "file-flattener：一个用于将目录内文件按类型筛选后，通过硬链接平铺到目标目录的桌面工具。",

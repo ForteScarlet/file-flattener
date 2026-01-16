@@ -1,9 +1,11 @@
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.ProjectLayout
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.*
+import org.gradle.internal.enterprise.test.FileProperty
 import org.gradle.process.ExecOperations
 import java.io.File
 import javax.inject.Inject
@@ -30,12 +32,12 @@ abstract class ConveyorExecTask @Inject constructor(
     }
 
     /**
-     * Conveyor 配置文件路径（相对于项目根目录）。
+     * Conveyor 配置文件路径。
      * 如果不设置，则使用默认的 conveyor.conf。
      */
-    @get:Input
+    @get:InputFile
     @get:Optional
-    abstract val configFile: Property<String>
+    abstract val configFile: RegularFileProperty
 
     /**
      * 输出目录，默认为 build/packages。
