@@ -1,5 +1,11 @@
 package love.forte.tools.ff.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,11 +21,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.draganddrop.dragAndDropTarget
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -42,7 +52,13 @@ import androidx.compose.ui.draganddrop.DragAndDropEvent
 import androidx.compose.ui.draganddrop.DragAndDropTarget
 import androidx.compose.ui.draganddrop.awtTransferable
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
@@ -59,6 +75,9 @@ import love.forte.tools.ff.fs.FfMigrationService
 import love.forte.tools.ff.fs.FfMigrationTask
 import love.forte.tools.ff.fs.FfTargetValidation
 import love.forte.tools.ff.fs.FfTargetValidator
+import love.forte.tools.ff.fs.FfUpdateService
+import love.forte.tools.ff.fs.FfUpdateResult
+import love.forte.tools.ff.fs.FfTempCleanupChoice
 import love.forte.tools.ff.storage.FfAppSettings
 import love.forte.tools.ff.storage.FfRegistryStoreAdapter
 import love.forte.tools.ff.ui.components.FfOutlinedButton
@@ -92,11 +111,14 @@ fun FfWorkspaceScreen(
     val scope = rememberCoroutineScope()
     val flattener = remember { FfFlattenService() }
     val migrationService = remember { FfMigrationService(flattener) }
+    val updateService = remember { FfUpdateService(flattener) }
 
     var managedTargets by remember { mutableStateOf<List<FfManagedTargetEntry>>(emptyList()) }
     var selectedTargetDir by remember { mutableStateOf<Path?>(null) }
     var addMode by remember { mutableStateOf(false) }
     var globalMessage by remember { mutableStateOf<String?>(null) }
+    var isUpdating by remember { mutableStateOf(false) }
+    var pendingTempCleanup by remember { mutableStateOf<Path?>(null) }
 
     val drafts = remember { mutableStateListOf<FfDraftTask>() }
 
@@ -410,39 +432,33 @@ fun FfWorkspaceScreen(
                     },
                     onUpdate = onUpdate@{
                         val target = selectedTargetDir ?: return@onUpdate
-                        scope.launch(Dispatchers.IO) {
-                            val marker = FfMarkerFile.read(target)
-                            if (marker == null) {
-                                withContext(Dispatchers.Main) { globalMessage = ".ff 配置读取失败" }
-                                return@launch
-                            }
-
-                            val sources = marker.sources
-                                .mapNotNull { src ->
-                                    val path = runCatching { Path.of(src.path) }.getOrNull() ?: return@mapNotNull null
-                                    val exts = src.extensions.toSet()
-                                    if (exts.isEmpty()) return@mapNotNull null
-                                    FfFlattenSourceConfig(sourceDir = path, selectedExtensions = exts)
-                                }
-
-                            runCatching {
-                                flattener.flatten(
-                                    config = FfFlattenTaskConfig(
-                                        targetDir = target,
-                                        sources = sources,
-                                        expectedTotalFiles = null,
-                                        linkConcurrency = FfDefaults.defaultLinkConcurrencyPerTask(settings.concurrencyLimit),
-                                    ),
-                                )
-                            }.onFailure { e ->
-                                withContext(Dispatchers.Main) { globalMessage = e.message ?: "更新失败" }
-                            }
+                        if (isUpdating) return@onUpdate
+                        isUpdating = true
+                        scope.launch {
+                            val result = updateService.update(
+                                targetDir = target,
+                                linkConcurrency = FfDefaults.defaultLinkConcurrencyPerTask(settings.concurrencyLimit),
+                            )
                             withContext(Dispatchers.Main) {
-                                reloadTargetsAsync()
-                                globalMessage = "已更新：${target.fileName}"
+                                isUpdating = false
+                                when (result) {
+                                    is FfUpdateResult.Success -> {
+                                        reloadTargetsAsync()
+                                        globalMessage = "已更新：${target.fileName}"
+                                    }
+                                    is FfUpdateResult.Failed -> {
+                                        globalMessage = result.message
+                                    }
+                                    is FfUpdateResult.TrashFailed -> {
+                                        pendingTempCleanup = result.tempDir
+                                        globalMessage = result.message
+                                        reloadTargetsAsync()
+                                    }
+                                }
                             }
                         }
                     },
+                    isUpdating = isUpdating,
                 )
 
                 else -> {
@@ -479,6 +495,7 @@ private fun ManagedTargetPane(
     onOpenSources: () -> Unit,
     onRemove: () -> Unit,
     onUpdate: () -> Unit,
+    isUpdating: Boolean = false,
 ) {
     if (entry == null) {
         Text(text = "目标目录信息不可用（可能已被移动或 .ff 缺失）", color = MaterialTheme.colorScheme.error)
@@ -508,8 +525,13 @@ private fun ManagedTargetPane(
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             FfOutlinedButton(text = "打开源目录", onClick = onOpenSources, icon = painterResource(Res.drawable.ic_folder_open))
             FfPrimaryButton(text = "打开目标目录", onClick = onOpenTarget, icon = painterResource(Res.drawable.ic_folder_open))
-            FfOutlinedButton(text = "移除", onClick = onRemove)
-            FfOutlinedButton(text = "更新", onClick = onUpdate, icon = painterResource(Res.drawable.ic_refresh))
+            FfOutlinedButton(text = "移除", onClick = onRemove, enabled = !isUpdating)
+            FfOutlinedButton(
+                text = if (isUpdating) "更新中…" else "更新",
+                onClick = onUpdate,
+                icon = painterResource(Res.drawable.ic_refresh),
+                enabled = !isUpdating,
+            )
         }
     }
 }
@@ -526,14 +548,19 @@ private fun AddModePane(
 ) {
     val onDropSourcesState by rememberUpdatedState(onDropSources)
     var showDropHighlight by remember { mutableStateOf(false) }
+    var dropCount by remember { mutableStateOf(0) }
     val dragAndDropTarget = remember {
         object : DragAndDropTarget {
             override fun onStarted(event: DragAndDropEvent) {
                 showDropHighlight = true
+                // 尝试预估拖拽数量
+                val dirs = runCatching { extractDroppedDirectories(event.awtTransferable) }.getOrElse { emptyList() }
+                dropCount = dirs.size.coerceAtLeast(1)
             }
 
             override fun onEnded(event: DragAndDropEvent) {
                 showDropHighlight = false
+                dropCount = 0
             }
 
             override fun onDrop(event: DragAndDropEvent): Boolean {
@@ -544,19 +571,11 @@ private fun AddModePane(
         }
     }
 
+    val primaryColor = MaterialTheme.colorScheme.primary
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .clip(RectangleShape)
-            .then(
-                if (showDropHighlight) {
-                    Modifier
-                        .border(BorderStroke(2.dp, MaterialTheme.colorScheme.primary), RectangleShape)
-                        .padding(6.dp)
-                } else {
-                    Modifier
-                },
-            )
             .dragAndDropTarget(
                 shouldStartDragAndDrop = { event -> shouldAcceptExternalDrop(event) },
                 target = dragAndDropTarget,
@@ -573,6 +592,48 @@ private fun AddModePane(
         Spacer(modifier = Modifier.height(10.dp))
         HorizontalDivider()
         Spacer(modifier = Modifier.height(10.dp))
+
+        // 拖拽预览区域 - 虚线边框
+        AnimatedVisibility(
+            visible = showDropHighlight,
+            enter = fadeIn() + slideInVertically { -it / 2 },
+            exit = fadeOut() + slideOutVertically { -it / 2 },
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(60.dp)
+                    .drawBehind {
+                        val stroke = Stroke(
+                            width = 2.dp.toPx(),
+                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
+                        )
+                        drawRoundRect(
+                            color = primaryColor,
+                            cornerRadius = CornerRadius(8.dp.toPx()),
+                            style = stroke
+                        )
+                    }
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(primaryColor.copy(alpha = 0.08f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = "+$dropCount",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = primaryColor,
+                )
+            }
+        }
+
+        AnimatedVisibility(
+            visible = showDropHighlight,
+            enter = fadeIn(),
+            exit = fadeOut(),
+        ) {
+            Spacer(modifier = Modifier.height(10.dp))
+        }
 
         Card(modifier = Modifier.fillMaxWidth()) {
             Text(
@@ -618,19 +679,36 @@ private fun DraftCard(
 ) {
     val scope = rememberCoroutineScope()
 
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+        ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+    ) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(text = draft.sourceDir.fileName?.toString() ?: "源目录", style = MaterialTheme.typography.titleMedium)
-                Spacer(modifier = Modifier.weight(1f))
-                FfTertiaryButton(text = "移除", onClick = onRemove)
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = draft.sourceDir.fileName?.toString() ?: "源目录",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = draft.sourceDir.absolutePathString(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                FfOutlinedButton(text = "移除", onClick = onRemove)
             }
 
-            Text(
-                text = draft.sourceDir.absolutePathString(),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
 
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(),
@@ -758,12 +836,20 @@ private fun extLabel(ext: String, count: Int): String {
     return "$label  ($count)"
 }
 
-private fun newDraft(sourceDir: Path): FfDraftTask =
-    FfDraftTask(
+private fun newDraft(sourceDir: Path): FfDraftTask {
+    // 默认填充目标目录为源目录下的 flatten 子目录
+    val defaultTargetDir = sourceDir.resolve("flatten")
+    val defaultTargetPathText = defaultTargetDir.absolutePathString()
+    val validation = FfTargetValidator.validate(defaultTargetDir)
+    return FfDraftTask(
         id = UUID.randomUUID().toString(),
         sourceDir = sourceDir,
+        targetPathText = defaultTargetPathText,
+        targetDir = defaultTargetDir,
+        targetValidation = validation,
         scanState = FfScanState.Scanning,
     )
+}
 
 private fun parsePathOrNull(raw: String): Path? {
     val trimmed = raw.trim()
