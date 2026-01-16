@@ -82,12 +82,12 @@ jobs:
             | `debian/*.deb` | Debian/Ubuntu | 安装包 |
 
       - name: Prepare GitHub Pages content
-        run: touch build/packages/.nojekyll
+        run: touch composeApp/build/packages/.nojekyll
 
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v4
         with:
-          path: build/packages
+          path: composeApp/build/packages
 
   pages:
     name: Deploy GitHub Pages
