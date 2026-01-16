@@ -1,11 +1,11 @@
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.FileSystemOperations
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.*
-import org.gradle.internal.enterprise.test.FileProperty
 import org.gradle.process.ExecOperations
 import java.io.File
 import javax.inject.Inject
@@ -16,6 +16,7 @@ import javax.inject.Inject
  * 用法示例：
  * ```kotlin
  * tasks.register<ConveyorExecTask>("convey") {
+ *     conveyorExecutable.set(project.resolveConveyorExecutable())
  *     configFile.set("conveyor.conf")
  *     outputDirectory.set(layout.buildDirectory.dir("packages"))
  * }
@@ -23,13 +24,21 @@ import javax.inject.Inject
  */
 abstract class ConveyorExecTask @Inject constructor(
     private val layout: ProjectLayout,
-    private val execOperations: ExecOperations
+    private val execOperations: ExecOperations,
+    private val fileSystemOperations: FileSystemOperations
 ) : DefaultTask() {
 
     init {
         group = "conveyor"
         description = "执行 Conveyor 打包命令"
     }
+
+    /**
+     * Conveyor 可执行文件路径。
+     * 必须在配置阶段设置，通常使用 `project.resolveConveyorExecutable()` 解析。
+     */
+    @get:InputFile
+    abstract val conveyorExecutable: RegularFileProperty
 
     /**
      * Conveyor 配置文件路径。
@@ -71,9 +80,11 @@ abstract class ConveyorExecTask @Inject constructor(
 
         // Conveyor 默认使用 SAFE_REPLACE：当输出目录内容被改动时会拒绝覆盖。
         // build/ 下的产物可安全重建，因此先清理输出目录，避免 "output dir changed" 导致构建失败。
-        project.delete(outputDir)
+        fileSystemOperations.delete {
+            delete(outputDir)
+        }
 
-        val conveyor = project.resolveConveyorExecutable()
+        val conveyor = conveyorExecutable.get().asFile
 
         val commandLineArgs = buildList {
             add(conveyor.absolutePath)

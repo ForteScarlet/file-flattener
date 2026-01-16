@@ -150,12 +150,14 @@ sqldelight {
 tasks.register<ConveyorExecTask>("convey") {
     dependsOn("jvmJar", "writeConveyorConfig")
     description = "执行 Conveyor 本地打包"
+    conveyorExecutable.set(project.resolveConveyorExecutable())
     configFile.set(rootDir.resolve("conveyor.conf"))
 }
 
 tasks.register<ConveyorExecTask>("conveyCi") {
     dependsOn("jvmJar", "writeConveyorConfig")
     description = "执行 Conveyor CI 打包"
+    conveyorExecutable.set(project.resolveConveyorExecutable())
     configFile.set(rootDir.resolve("ci.conveyor.conf"))
 }
 
