@@ -1,11 +1,11 @@
 package love.forte.tools.ff.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,7 +23,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.border
 import androidx.compose.foundation.draganddrop.dragAndDropTarget
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
@@ -51,13 +50,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draganddrop.DragAndDropEvent
 import androidx.compose.ui.draganddrop.DragAndDropTarget
 import androidx.compose.ui.draganddrop.awtTransferable
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -89,6 +82,7 @@ import love.forte.tools.ff.ui.workspace.FfManagedTargetEntry
 import love.forte.tools.ff.ui.workspace.FfScanState
 import love.forte.tools.ff.ui.workspace.FfWorkspaceLoader
 import love.forte.tools.file_flattener.composeapp.generated.resources.Res
+import love.forte.tools.file_flattener.composeapp.generated.resources.ic_drop_zone
 import love.forte.tools.file_flattener.composeapp.generated.resources.ic_folder_open
 import love.forte.tools.file_flattener.composeapp.generated.resources.ic_refresh
 import org.jetbrains.compose.resources.painterResource
@@ -548,19 +542,14 @@ private fun AddModePane(
 ) {
     val onDropSourcesState by rememberUpdatedState(onDropSources)
     var showDropHighlight by remember { mutableStateOf(false) }
-    var dropCount by remember { mutableStateOf(0) }
     val dragAndDropTarget = remember {
         object : DragAndDropTarget {
             override fun onStarted(event: DragAndDropEvent) {
                 showDropHighlight = true
-                // 尝试预估拖拽数量
-                val dirs = runCatching { extractDroppedDirectories(event.awtTransferable) }.getOrElse { emptyList() }
-                dropCount = dirs.size.coerceAtLeast(1)
             }
 
             override fun onEnded(event: DragAndDropEvent) {
                 showDropHighlight = false
-                dropCount = 0
             }
 
             override fun onDrop(event: DragAndDropEvent): Boolean {
@@ -593,7 +582,18 @@ private fun AddModePane(
         HorizontalDivider()
         Spacer(modifier = Modifier.height(10.dp))
 
-        // 拖拽预览区域 - 虚线边框
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Text(
+                modifier = Modifier.padding(12.dp),
+                text = "你可以把目录直接拖拽到右侧区域（新增模式）来快速添加源目录。",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // 拖拽预览区域
         AnimatedVisibility(
             visible = showDropHighlight,
             enter = fadeIn() + slideInVertically { -it / 2 },
@@ -602,27 +602,15 @@ private fun AddModePane(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(60.dp)
-                    .drawBehind {
-                        val stroke = Stroke(
-                            width = 2.dp.toPx(),
-                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
-                        )
-                        drawRoundRect(
-                            color = primaryColor,
-                            cornerRadius = CornerRadius(8.dp.toPx()),
-                            style = stroke
-                        )
-                    }
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(primaryColor.copy(alpha = 0.08f)),
+                    .height(72.dp)
+                    .background(primaryColor.copy(alpha = 0.06f), RoundedCornerShape(8.dp)),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    text = "+$dropCount",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = primaryColor,
+                Image(
+                    painter = painterResource(Res.drawable.ic_drop_zone),
+                    contentDescription = "拖放区域",
+                    modifier = Modifier.height(48.dp),
+                    colorFilter = ColorFilter.tint(primaryColor),
                 )
             }
         }
@@ -633,15 +621,6 @@ private fun AddModePane(
             exit = fadeOut(),
         ) {
             Spacer(modifier = Modifier.height(10.dp))
-        }
-
-        Card(modifier = Modifier.fillMaxWidth()) {
-            Text(
-                modifier = Modifier.padding(12.dp),
-                text = "你可以把目录直接拖拽到右侧区域（新增模式）来快速添加源目录。",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
         }
 
         Spacer(modifier = Modifier.height(10.dp))
