@@ -4,12 +4,6 @@ package love.forte.tools.ff.db
  * 数据库元数据键常量。
  */
 object FfDatabaseMetaKeys {
-    /** 旧数据迁移是否完成 */
-    const val LEGACY_MIGRATION_DONE = "legacy_migration_done"
-
-    /** 旧数据迁移完成时间戳 */
-    const val LEGACY_MIGRATION_AT = "legacy_migration_at"
-
     /** 数据库创建时间戳 */
     const val CREATED_AT = "created_at"
 }

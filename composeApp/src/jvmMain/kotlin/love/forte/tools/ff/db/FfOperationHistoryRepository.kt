@@ -3,7 +3,7 @@ package love.forte.tools.ff.db
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import love.forte.tools.ff.fs.FfFlattenReport
-import migrations.Operation_history
+import love.forte.tools.ff.db.migrations.Operation_history
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 

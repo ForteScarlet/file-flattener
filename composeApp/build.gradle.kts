@@ -32,6 +32,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            implementation(compose.desktop.currentOs)
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.animation)
@@ -49,7 +50,7 @@ kotlin {
         }
 
         jvmMain.dependencies {
-            implementation(libs.compose.desktop)
+            // implementation(libs.compose.desktop)
             implementation(libs.kotlinx.coroutinesSwing)
             implementation(libs.sqldelight.jvm)
         }

@@ -29,7 +29,7 @@ data class FfFlattenTaskConfig(
     val targetDir: Path,
     val sources: List<FfFlattenSourceConfig>,
     val expectedTotalFiles: Int? = null,
-    val linkConcurrency: Int = FfConstants.LegacyDefaultConcurrency,
+    val linkConcurrency: Int = FfConstants.DefaultConcurrency,
 )
 
 data class FfFlattenProgress(

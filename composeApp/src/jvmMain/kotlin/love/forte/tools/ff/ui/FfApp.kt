@@ -61,11 +61,16 @@ fun FfApp() {
     var userDataDir by remember { mutableStateOf<Path?>(null) }
     var dbInitState by remember { mutableStateOf<FfDatabaseInitState>(FfDatabaseInitState.NotInitialized) }
 
-    val settingsStoreAdapter = remember(userDataDir) {
-        userDataDir?.let { FfSettingsStoreAdapter.fromManager(databaseManager) }
+    // 仅在数据库初始化完成后创建 adapter
+    val settingsStoreAdapter = remember(dbInitState) {
+        if (dbInitState is FfDatabaseInitState.Ready) {
+            FfSettingsStoreAdapter.fromManager(databaseManager)
+        } else null
     }
-    val registryStoreAdapter = remember(userDataDir) {
-        userDataDir?.let { FfRegistryStoreAdapter.fromManager(databaseManager) }
+    val registryStoreAdapter = remember(dbInitState) {
+        if (dbInitState is FfDatabaseInitState.Ready) {
+            FfRegistryStoreAdapter.fromManager(databaseManager)
+        } else null
     }
 
     LaunchedEffect(Unit) {

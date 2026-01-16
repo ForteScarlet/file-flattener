@@ -22,9 +22,9 @@ object FfConstants {
     const val NamingVersion: Int = 2
 
     /**
-     * 旧版本默认并发度（保留兼容用）。
+     * 默认并发度。
      */
-    const val LegacyDefaultConcurrency: Int = 8
+    const val DefaultConcurrency: Int = 8
 
     /**
      * 并发上限：避免 UI 层/配置层误设置导致过量线程竞争与磁盘风暴。

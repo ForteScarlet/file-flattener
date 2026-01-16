@@ -12,7 +12,7 @@ import java.nio.file.Path
 sealed interface FfDatabaseInitState {
     data object NotInitialized : FfDatabaseInitState
     data object Initializing : FfDatabaseInitState
-    data class Ready(val migrationResult: FfLegacyMigrationResult?) : FfDatabaseInitState
+    data object Ready : FfDatabaseInitState
     data class Failed(val error: Throwable) : FfDatabaseInitState
 }
 
@@ -97,16 +97,6 @@ class FfDatabaseManager private constructor() {
             _registryRepository = FfRegistryRepository(db)
             _operationHistoryRepository = FfOperationHistoryRepository(db)
 
-            // 执行旧数据迁移
-            val migrationResult = withContext(Dispatchers.IO) {
-                val helper = FfLegacyMigrationHelper(db, normalizedDir)
-                if (helper.needsMigration()) {
-                    helper.migrate()
-                } else {
-                    null
-                }
-            }
-
             // 记录数据库创建时间（如果是新数据库）
             withContext(Dispatchers.IO) {
                 val createdAt = db.ffDatabaseQueries
@@ -121,7 +111,7 @@ class FfDatabaseManager private constructor() {
                 }
             }
 
-            state = FfDatabaseInitState.Ready(migrationResult)
+            state = FfDatabaseInitState.Ready
             state
         } catch (e: Exception) {
             state = FfDatabaseInitState.Failed(e)

@@ -17,20 +17,9 @@ class FfSettingsRepository(
      * 加载应用设置。
      */
     suspend fun load(): FfAppSettings = withContext(Dispatchers.IO) {
-        val theme = database.ffDatabaseQueries.selectSettingByKey(FfSettingsKeys.THEME)
-            .executeAsOneOrNull()
-            ?.let(::parseTheme)
-            ?: FfAppTheme.CherryRed
-
-        val concurrencyLimit = database.ffDatabaseQueries.selectSettingByKey(FfSettingsKeys.CONCURRENCY_LIMIT)
-            .executeAsOneOrNull()
-            ?.toIntOrNull()
-            ?.coerceIn(1, FfConstants.MaxLinkConcurrency)
-            ?: FfDefaults.defaultConcurrencyLimit()
-
         FfAppSettings(
-            theme = theme,
-            concurrencyLimit = concurrencyLimit,
+            theme = getTheme(),
+            concurrencyLimit = getConcurrencyLimit(),
         )
     }
 
@@ -39,31 +28,35 @@ class FfSettingsRepository(
      */
     suspend fun save(settings: FfAppSettings) = withContext(Dispatchers.IO) {
         database.transaction {
-            database.ffDatabaseQueries.upsertSetting(
-                key = FfSettingsKeys.THEME,
-                value_ = settings.theme.name
-            )
-            database.ffDatabaseQueries.upsertSetting(
-                key = FfSettingsKeys.CONCURRENCY_LIMIT,
-                value_ = settings.concurrencyLimit.toString()
-            )
+            setTheme(settings.theme)
+            setConcurrencyLimit(settings.concurrencyLimit)
         }
     }
 
-    /**
-     * 获取单个设置值。
-     */
-    suspend fun get(key: String): String? = withContext(Dispatchers.IO) {
-        database.ffDatabaseQueries.selectSettingByKey(key).executeAsOneOrNull()
+    private fun getTheme(): FfAppTheme {
+        val raw = database.ffDatabaseQueries
+            .selectSettingByKey(FfSettingsKeys.THEME)
+            .executeAsOneOrNull()
+        return raw?.let {
+            runCatching { enumValueOf<FfAppTheme>(it) }.getOrNull()
+        } ?: FfAppTheme.CherryRed
     }
 
-    /**
-     * 设置单个值。
-     */
-    suspend fun set(key: String, value: String) = withContext(Dispatchers.IO) {
-        database.ffDatabaseQueries.upsertSetting(key, value)
+    private fun setTheme(theme: FfAppTheme) {
+        database.ffDatabaseQueries.upsertSetting(FfSettingsKeys.THEME, theme.name)
     }
 
-    private fun parseTheme(raw: String): FfAppTheme =
-        runCatching { enumValueOf<FfAppTheme>(raw) }.getOrDefault(FfAppTheme.CherryRed)
+    private fun getConcurrencyLimit(): Int {
+        return database.ffDatabaseQueries
+            .selectSettingByKey(FfSettingsKeys.CONCURRENCY_LIMIT)
+            .executeAsOneOrNull()
+            ?.toIntOrNull()
+            ?.coerceIn(1, FfConstants.MaxLinkConcurrency)
+            ?: FfDefaults.defaultConcurrencyLimit()
+    }
+
+    private fun setConcurrencyLimit(limit: Int) {
+        val coerced = limit.coerceIn(1, FfConstants.MaxLinkConcurrency)
+        database.ffDatabaseQueries.upsertSetting(FfSettingsKeys.CONCURRENCY_LIMIT, coerced.toString())
+    }
 }

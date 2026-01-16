@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.Image
 import androidx.compose.material3.IconButton
-import androidx.compose.ui.res.painterResource
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -33,6 +32,9 @@ import love.forte.tools.ff.ui.components.FfOutlinedButton
 import love.forte.tools.ff.ui.components.FfPrimaryButton
 import love.forte.tools.ff.ui.components.FfTertiaryButton
 import love.forte.tools.ff.ui.platform.FfFileDialogs
+import love.forte.tools.file_flattener.composeapp.generated.resources.Res
+import love.forte.tools.file_flattener.composeapp.generated.resources.ic_folder_open
+import org.jetbrains.compose.resources.painterResource
 import java.awt.Desktop
 import java.nio.file.InvalidPathException
 import java.nio.file.Path
@@ -118,7 +120,7 @@ fun FfConfigScreen(
                 runCatching { Desktop.getDesktop().open(appDir.toFile()) }
                     .onFailure { userDataDirError = it.message ?: "无法打开目录" }
             }) {
-                Image(painter = painterResource("drawable/ic_folder_open.svg"), contentDescription = "open-user-data-dir")
+                Image(painter = painterResource(Res.drawable.ic_folder_open), contentDescription = "open-user-data-dir")
             }
         }
 

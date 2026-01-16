@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.foundation.Image
 import androidx.compose.material3.IconButton
-import androidx.compose.ui.res.painterResource
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,6 +41,9 @@ import love.forte.tools.ff.ui.ffSharedNavModifier
 import love.forte.tools.ff.ui.components.FfOutlinedButton
 import love.forte.tools.ff.ui.components.FfPrimaryButton
 import love.forte.tools.ff.FfBuildConfig
+import love.forte.tools.file_flattener.composeapp.generated.resources.Res
+import love.forte.tools.file_flattener.composeapp.generated.resources.ic_arrow_back
+import org.jetbrains.compose.resources.painterResource
 import java.nio.file.Path
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -65,7 +67,7 @@ fun FfPanelScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBackToHome) {
-                Image(painter = painterResource("drawable/ic_arrow_back.svg"), contentDescription = "back")
+                Image(painter = painterResource(Res.drawable.ic_arrow_back), contentDescription = "back")
             }
 
             Spacer(modifier = Modifier.width(8.dp))
