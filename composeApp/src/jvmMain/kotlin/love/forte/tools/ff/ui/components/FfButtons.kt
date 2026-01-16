@@ -11,6 +11,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
@@ -69,7 +70,7 @@ fun FfOutlinedButton(
 }
 
 /**
- * 再次要按钮：灰色（用于“全选/全取消”等不关键操作）。
+ * 再次要按钮：灰色（用于"全选/全取消"等不关键操作）。
  */
 @Composable
 fun FfTertiaryButton(
@@ -95,5 +96,29 @@ fun FfTertiaryButton(
             Spacer(modifier = Modifier.width(FfIconSpacer))
         }
         Text(text)
+    }
+}
+
+/**
+ * 文字按钮：无背景，仅文字（用于"恢复默认"等次要操作）。
+ */
+@Composable
+fun FfTextButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    TextButton(
+        onClick = onClick,
+        modifier = modifier,
+        enabled = enabled,
+        shape = FfButtonShape,
+        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp),
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelMedium,
+        )
     }
 }

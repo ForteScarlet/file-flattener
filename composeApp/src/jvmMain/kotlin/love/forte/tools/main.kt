@@ -9,6 +9,6 @@ fun main() = application {
         onCloseRequest = ::exitApplication,
         title = "file-flattener v${FfBuildConfig.VERSION}",
     ) {
-        App()
+        App(onExit = ::exitApplication)
     }
 }

@@ -4,9 +4,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.Image
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -30,7 +33,7 @@ import love.forte.tools.ff.storage.FfAppTheme
 import love.forte.tools.ff.storage.FfAppPaths
 import love.forte.tools.ff.ui.components.FfOutlinedButton
 import love.forte.tools.ff.ui.components.FfPrimaryButton
-import love.forte.tools.ff.ui.components.FfTertiaryButton
+import love.forte.tools.ff.ui.components.FfTextButton
 import love.forte.tools.ff.ui.platform.FfFileDialogs
 import love.forte.tools.file_flattener.composeapp.generated.resources.Res
 import love.forte.tools.file_flattener.composeapp.generated.resources.ic_folder_open
@@ -54,7 +57,12 @@ fun FfConfigScreen(
 
     LaunchedEffect(appDir) { userDataDirError = null }
 
-    Column(modifier = Modifier.padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp)
+    ) {
         Text(text = "配置", style = MaterialTheme.typography.headlineSmall)
         Spacer(modifier = Modifier.height(12.dp))
 
@@ -93,11 +101,6 @@ fun FfConfigScreen(
                     }
                 }
             })
-            FfTertiaryButton(text = "恢复默认", onClick = {
-                userDataDirText = defaultUserDataDir.absolutePathString()
-                userDataDirError = null
-                onUpdateUserDataDir(defaultUserDataDir)
-            })
             FfPrimaryButton(text = "应用", onClick = {
                 val raw = userDataDirText.trim()
                 if (raw.isEmpty()) {
@@ -115,6 +118,11 @@ fun FfConfigScreen(
                 userDataDirError = null
                 onUpdateUserDataDir(parsed)
             })
+            FfTextButton(text = "恢复默认", onClick = {
+                userDataDirText = defaultUserDataDir.absolutePathString()
+                userDataDirError = null
+                onUpdateUserDataDir(defaultUserDataDir)
+            })
             Spacer(modifier = Modifier.weight(1f))
             IconButton(onClick = {
                 runCatching { Desktop.getDesktop().open(appDir.toFile()) }
@@ -129,7 +137,7 @@ fun FfConfigScreen(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(text = "主题配色", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.weight(1f))
-            FfTertiaryButton(text = "恢复默认", onClick = {
+            FfTextButton(text = "恢复默认", onClick = {
                 onUpdateSettings(settings.copy(theme = FfAppTheme.CherryRed))
             })
         }
@@ -156,7 +164,7 @@ fun FfConfigScreen(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(text = "并发上限", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.weight(1f))
-            FfTertiaryButton(text = "恢复默认", onClick = {
+            FfTextButton(text = "恢复默认", onClick = {
                 onUpdateSettings(settings.copy(concurrencyLimit = FfDefaults.defaultConcurrencyLimit()))
             })
         }

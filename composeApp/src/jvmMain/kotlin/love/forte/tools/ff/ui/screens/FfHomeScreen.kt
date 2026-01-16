@@ -7,10 +7,13 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,6 +25,7 @@ import love.forte.tools.ff.ui.FfSharedKeys
 import love.forte.tools.ff.ui.ffSharedNavModifier
 import love.forte.tools.ff.ui.components.FfOutlinedButton
 import love.forte.tools.ff.ui.components.FfPrimaryButton
+import love.forte.tools.ff.ui.components.FfTextButton
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -31,6 +35,7 @@ fun FfHomeScreen(
     onOpenWorkspace: () -> Unit,
     onOpenConfig: () -> Unit,
     onOpenAbout: () -> Unit,
+    onExit: () -> Unit,
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -71,6 +76,9 @@ fun FfHomeScreen(
                     modifier = ffSharedNavModifier(FfSharedKeys.NavAbout, animatedVisibilityScope).fillMaxWidth(),
                 )
             }
+
+            HorizontalDivider(thickness = 0.6.dp, modifier = Modifier.padding(vertical = 4.dp))
+            FfTextButton(text = "退出", onClick = onExit, modifier = Modifier.fillMaxWidth())
         }
     }
 }

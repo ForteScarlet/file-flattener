@@ -50,7 +50,7 @@ data class FfNavState(
 )
 
 @Composable
-fun FfApp() {
+fun FfApp(onExit: () -> Unit = {}) {
     val bootstrapDir = remember { FfAppPaths.defaultAppDir() }
     val bootstrapStore = remember(bootstrapDir) { FfBootstrapStore(bootstrapDir) }
     val scope = rememberCoroutineScope()
@@ -159,6 +159,7 @@ fun FfApp() {
                                 onUpdateUserDataDir = ::updateUserDataDir,
                                 onBackToHome = { navState = navState.copy(route = FfRootRoute.Home) },
                                 onNavigate = { route, tab -> navState = navState.copy(route = route, panelTab = tab) },
+                                onExit = onExit,
                             )
                         }
                     }
@@ -182,6 +183,7 @@ private fun RootSharedTransition(
     onUpdateUserDataDir: (Path) -> Unit,
     onBackToHome: () -> Unit,
     onNavigate: (FfRootRoute, FfPanelTab) -> Unit,
+    onExit: () -> Unit,
 ) {
     SharedTransitionLayout shared@{
         AnimatedContent(
@@ -197,6 +199,7 @@ private fun RootSharedTransition(
                         onOpenWorkspace = { onNavigate(FfRootRoute.Panel, FfPanelTab.Workspace) },
                         onOpenConfig = { onNavigate(FfRootRoute.Panel, FfPanelTab.Config) },
                         onOpenAbout = { onNavigate(FfRootRoute.Panel, FfPanelTab.About) },
+                        onExit = onExit,
                     )
                 }
 

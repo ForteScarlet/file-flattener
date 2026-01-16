@@ -7,6 +7,6 @@ import love.forte.tools.ff.ui.FfApp
 
 @Composable
 @Preview
-fun App() {
-    FfApp()
+fun App(onExit: () -> Unit = {}) {
+    FfApp(onExit = onExit)
 }
