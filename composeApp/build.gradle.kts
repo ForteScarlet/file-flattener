@@ -140,7 +140,9 @@ sqldelight {
         register("FfDatabase") {
             packageName.set("love.forte.tools.ff.db")
             srcDirs("src/jvmMain/sqldelight")
-            version = 1
+            // SQLDelight 的 schema 版本由 .sqm 迁移文件自动推导
+            // 迁移文件命名: <从该版本升级>.sqm (例如 1.sqm = 从 v1 升级到 v2)
+            // 当前只有 1.sqm，所以 schema 版本自动为 2 (初始 1 + 迁移文件数量)
             deriveSchemaFromMigrations.set(true)
         }
     }
