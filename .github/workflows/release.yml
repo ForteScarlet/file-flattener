@@ -51,20 +51,20 @@ jobs:
           name: conveyor-site-and-packages
           retention-days: 7
           path: |
-            build/packages/**
+            composeApp/build/packages/**
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
           files: |
-            build/packages/**/*.zip
-            build/packages/**/*.tar.gz
-            build/packages/**/*.deb
-            build/packages/**/*.msix
-            build/packages/**/*.appinstaller
-            build/packages/**/*.crt
-            build/packages/**/*.exe
+            composeApp/build/packages/**/*.zip
+            composeApp/build/packages/**/*.tar.gz
+            composeApp/build/packages/**/*.deb
+            composeApp/build/packages/**/*.msix
+            composeApp/build/packages/**/*.appinstaller
+            composeApp/build/packages/**/*.crt
+            composeApp/build/packages/**/*.exe
           body: |
             ## 下载说明
 
