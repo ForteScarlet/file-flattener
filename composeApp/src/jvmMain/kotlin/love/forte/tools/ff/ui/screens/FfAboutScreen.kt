@@ -62,7 +62,7 @@ fun FfAboutScreen() {
             Image(painterResource(Res.drawable.icon), "Logo")
             Spacer(modifier = Modifier.height(12.dp))
             Text(
-                text = "file-flattener：一个用于将目录内文件按类型筛选后，通过硬链接平铺到目标目录的桌面工具。",
+                text = "file-flattener：一款桌面应用程序，通过文件链接将多个目录中的文件递归平铺到单一目标目录。",
                 style = MaterialTheme.typography.bodyMedium,
             )
 

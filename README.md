@@ -1,94 +1,66 @@
-# FileFlattener
+# 目录平铺助手
 
-<img src="icon.svg" alt="FileFlattener Icon" height="128">
+<img src="icon.svg" alt="目录平铺助手图标" height="128">
 
-[中文](README_CN.md) | **English**
+**中文** | [English](README.md)
 
-A desktop application that flattens files from multiple directories into a single target directory using hard links.
+一款桌面应用程序，通过文件链接将多个目录中的文件递归平铺到单一目标目录。
 
-## Features
+## 功能特性
 
-- **Hard Link Flattening**: Flatten files from source directories to a target directory using hard links, **no disk
-  space duplication**.
-- **Extension Filtering**: Select specific file types to include.
-- **Multi-Source Support**: Add multiple source directories in one operation.
-- **Cross-Platform**: Supports Windows, macOS, and Linux.
+- **目录递归平铺**：使用文件链接将源目录文件平铺到目标目录，**不占用额外磁盘空间**。
+- **扩展名筛选**：按文件类型选择性转移。
+- **多源目录**：支持同时添加多个源目录。
+- **跨平台**：支持 Windows、macOS 和 Linux
 
-## Use Cases
+## 使用场景
 
-When you have files or media scattered across deeply nested directory structures, and your browsing application cannot
-recursively display them all at once, you may want to create a completely flattened view without disrupting the original
-directory structure, without consuming extra disk space, and allowing for seamless marathon-style
-browsing ---- **FileFlattener** is the perfect tool for this!
+当你存在一些目录层级过多的文件、媒体等，而相对应的浏览应用无法直接递归地依次展现它们，
+这时候你想要在不破坏原本资源的目录结构的前提下额外准备一个完全平铺、不占用额外磁盘空间、还方便马拉松式一马平川地阅览它们时，
+**目录平铺助手** 就可以派上用场了！
 
-## Installation
+## 安装
 
-### Download
+### 下载
 
-Visit the [Download Page](https://fortescarlet.github.io/file-flattener/download) to get the latest version.
+访问 [下载页面](https://fortescarlet.github.io/file-flattener/download) 获取最新版本。
 
-## Examples
+## 示例
 
-### Before Flattening
+### 平铺前
 
 ```
-Source Directories:
-├── Music/
-│   ├── Album1/
-│   │   ├── track1.mp3
-│   │   └── track2.mp3
-│   └── Album2/
-│       └── track3.mp3
-└── Downloads/
-    └── Songs/
-        └── track4.mp3
+源目录：
+├── 音乐/
+│   ├── 专辑1/
+│   │   ├── 曲目1.mp3
+│   │   └── 曲目2.mp3
+│   └── 专辑2/
+│       └── 曲目3.mp3
+└── 下载/
+    └── 歌曲/
+        └── 曲目4.mp3
 ```
 
-### After Flattening
+### 平铺后
 
 ```
-Target Directory:
-└── FlattenedMusic/
-    ├── track1.mp3  (hard link)
-    ├── track2.mp3  (hard link)
-    ├── track3.mp3  (hard link)
-    └── track4.mp3  (hard link)
+目标目录：
+└── 平铺音乐/
+    ├── 音乐-专辑1-曲目1.mp3 
+    ├── 音乐-专辑1-曲目2.mp3 
+    ├── 音乐-专辑2-曲目3.mp3 
+    └── 下载-歌曲-曲目4.mp3 
 ```
 
-All files are accessible in a single directory without duplicating disk space.
+所有文件集中在单一目录中，无需占用额外磁盘空间。
 
-## Usage
+## 应用截图
 
-1. Launch the application
-2. Go to **Workspace**
-3. Add source directories and select file extensions to include
-4. Choose a target directory
-5. Click **Execute** to flatten files
-
-## Requirements
-
-- Java 21+ (bundled in installers)
-- File system must support hard links
-
-## Building from Source
-
-```bash
-# Clone the repository
-git clone https://github.com/ForteScarlet/file-flattener.git
-cd file-flattener
-
-# Build and run
-./gradlew :composeApp:run
-
-# Create distribution packages
-./gradlew :composeApp:packageDistributionForCurrentOS
-```
-
-## License
-
-Copyright © 2024-2025 Forte Scarlet. All rights reserved.
-
-## Links
-
-- [GitHub Repository](https://github.com/ForteScarlet/file-flattener)
-- [Download Page](https://fortescarlet.github.io/file-flattener/download)
+![Home.png](.github/images/Home.png)
+![Workspace.png](.github/images/Workspace.png)
+![Config.png](.github/images/Config.png)
+![Workspace-Add1.png](.github/images/Workspace-Add1.png)
+![Workspace-Add2.png](.github/images/Workspace-Add2.png)
+![Workspace-Work.png](.github/images/Workspace-Work.png)
+![Workspace-Detail.png](.github/images/Workspace-Detail.png)

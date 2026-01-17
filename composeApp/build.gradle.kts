@@ -137,7 +137,7 @@ compose.desktop {
 
 sqldelight {
     databases {
-        create("FfDatabase") {
+        register("FfDatabase") {
             packageName.set("love.forte.tools.ff.db")
             srcDirs("src/jvmMain/sqldelight")
             version = 1
