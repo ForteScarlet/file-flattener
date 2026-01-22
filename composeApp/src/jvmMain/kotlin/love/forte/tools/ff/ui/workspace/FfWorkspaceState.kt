@@ -1,5 +1,7 @@
 package love.forte.tools.ff.ui.workspace
 
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -8,6 +10,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import love.forte.tools.ff.FfConstants
@@ -123,16 +126,43 @@ class FfWorkspaceState(
         private set
     // endregion
 
-    // region 全局消息（用于显示临时提示）
-    var globalMessage: String? by mutableStateOf(null)
-        private set
+    // region 全局消息（Snackbar 快捷信息栏）
+    /** Snackbar 宿主状态，用于显示快捷消息 */
+    val snackbarHostState = SnackbarHostState()
 
+    /** 当前正在显示的 Snackbar 协程任务，用于取消重复消息 */
+    private var snackbarJob: Job? = null
+
+    /**
+     * 显示 Snackbar 消息
+     *
+     * 如果当前有消息正在显示，会先取消当前消息再显示新消息。
+     * 消息会在 [SnackbarDuration.Short] 后自动消失。
+     *
+     * @param message 要显示的消息内容
+     */
     fun showMessage(message: String?) {
-        globalMessage = message
+        if (message == null) {
+            // 取消当前正在显示的 Snackbar
+            snackbarJob?.cancel()
+            snackbarJob = null
+            return
+        }
+
+        // 取消之前的 Snackbar 任务，避免消息堆积
+        snackbarJob?.cancel()
+        snackbarJob = scope.launch {
+            snackbarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Short,
+            )
+        }
     }
 
+    /** 清除当前显示的消息 */
     fun clearMessage() {
-        globalMessage = null
+        snackbarJob?.cancel()
+        snackbarJob = null
     }
     // endregion
 
@@ -254,7 +284,7 @@ class FfWorkspaceState(
             }
 
             if (allowed.isEmpty()) {
-                globalMessage = if (ignoredManaged > 0) "选择的目录均为受管目录，已忽略。" else "未选择有效源目录。"
+                showMessage(if (ignoredManaged > 0) "选择的目录均为受管目录，已忽略。" else "未选择有效源目录。")
                 return@launch
             }
 
@@ -301,7 +331,7 @@ class FfWorkspaceState(
     fun startMigration() {
         val runnable = _drafts.filter { it.canRun() }
         if (runnable.isEmpty()) {
-            globalMessage = "没有可执行的任务：请检查目标目录与扩展名选择。"
+            showMessage("没有可执行的任务：请检查目标目录与扩展名选择。")
             return
         }
 
@@ -411,7 +441,7 @@ class FfWorkspaceState(
                 }
             }
             reloadTargets()
-            globalMessage = "迁移已完成：已刷新工作区列表。"
+            showMessage("迁移已完成：已刷新工作区列表。")
         }
     }
 
@@ -433,7 +463,7 @@ class FfWorkspaceState(
     fun openTargetDir() {
         val target = selectedTargetDir ?: return
         runCatching { Desktop.getDesktop().open(target.toFile()) }
-            .onFailure { globalMessage = it.message ?: "无法打开目录" }
+            .onFailure { showMessage(it.message ?: "无法打开目录") }
     }
 
     /** 打开源目录 */
@@ -445,12 +475,12 @@ class FfWorkspaceState(
             .distinctBy { it.toAbsolutePath().normalize().absolutePathString() }
             .toList()
         if (sources.isEmpty()) {
-            globalMessage = "未找到可打开的源目录。"
+            showMessage("未找到可打开的源目录。")
             return
         }
         sources.forEach { src ->
             runCatching { Desktop.getDesktop().open(src.toFile()) }
-                .onFailure { globalMessage = it.message ?: "无法打开源目录：${src.fileName}" }
+                .onFailure { showMessage(it.message ?: "无法打开源目录：${src.fileName}") }
         }
     }
 
@@ -485,15 +515,15 @@ class FfWorkspaceState(
                 when (result) {
                     is FfUpdateResult.Success -> {
                         reloadTargets()
-                        globalMessage = "已更新：${target.fileName}"
+                        showMessage("已更新：${target.fileName}")
                     }
 
                     is FfUpdateResult.Failed -> {
-                        globalMessage = result.message
+                        showMessage(result.message)
                     }
 
                     is FfUpdateResult.TrashFailed -> {
-                        globalMessage = result.message
+                        showMessage(result.message)
                         reloadTargets()
                     }
                 }

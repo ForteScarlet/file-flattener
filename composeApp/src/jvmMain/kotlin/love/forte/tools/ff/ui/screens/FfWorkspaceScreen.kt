@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
@@ -30,6 +31,7 @@ import kotlin.io.path.absolutePathString
  * 采用单向数据流架构：
  * - 状态通过 FfWorkspaceState 统一管理并向下传递
  * - 用户事件通过回调向上传播
+ * - 全局消息通过 Snackbar 快捷信息栏显示
  *
  * @param appDir 应用数据目录
  * @param registryStoreAdapter 目标目录注册表适配器
@@ -53,46 +55,64 @@ fun FfWorkspaceScreen(
         state.reloadTargets()
     }
 
-    // 主布局：左侧列表 + 右侧详情
-    Row(modifier = Modifier.fillMaxSize()) {
-        // 左侧：受管目标列表
-        FfTargetListPane(
-            managedTargets = state.managedTargets,
-            selectedTargetDir = state.selectedTargetDir,
-            isAddMode = state.viewMode == FfWorkspaceViewMode.AddMode,
-            onSelectTarget = { state.selectTarget(it) },
-            onEnterAddMode = { state.enterAddMode() },
-            onExitAddMode = { state.exitAddMode() },
-        )
-
-        VerticalDivider(modifier = Modifier.fillMaxHeight().width(1.dp))
-
-        // 右侧：详情面板
-        Box(modifier = Modifier.weight(1f).fillMaxHeight().padding(16.dp)) {
-            FfDetailPane(
-                state = state,
-                onPickSources = {
-                    scope.launch {
-                        val picked = FfFileDialogs.pickDirectories("选择源目录（可多选）")
-                        if (picked.isNotEmpty()) {
-                            state.addSourceDirs(picked)
+    // 使用 Scaffold 包装以支持 Snackbar
+    Scaffold(
+        snackbarHost = {
+            SnackbarHost(hostState = state.snackbarHostState) { snackbarData ->
+                // 自定义 Snackbar：文字居中 + 可手动关闭
+                Snackbar(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    dismissAction = {
+                        // 关闭按钮
+                        TextButton(
+                            onClick = { snackbarData.dismiss() },
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = MaterialTheme.colorScheme.inversePrimary,
+                            ),
+                        ) {
+                            Text("关闭")
                         }
-                    }
-                },
+                    },
+                ) {
+                    // 文字居中显示
+                    Text(
+                        text = snackbarData.visuals.message,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
+        },
+        // 透明背景，融入现有布局
+        containerColor = MaterialTheme.colorScheme.background,
+    ) { innerPadding ->
+        // 主布局：左侧列表 + 右侧详情
+        Row(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            // 左侧：受管目标列表
+            FfTargetListPane(
+                managedTargets = state.managedTargets,
+                selectedTargetDir = state.selectedTargetDir,
+                isAddMode = state.viewMode == FfWorkspaceViewMode.AddMode,
+                onSelectTarget = { state.selectTarget(it) },
+                onEnterAddMode = { state.enterAddMode() },
+                onExitAddMode = { state.exitAddMode() },
             )
 
-            // 全局消息提示
-            state.globalMessage?.let { message ->
-                Column(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Text(
-                            modifier = Modifier.padding(10.dp),
-                            text = message,
-                            style = MaterialTheme.typography.bodySmall,
-                        )
-                    }
-                }
+            VerticalDivider(modifier = Modifier.fillMaxHeight().width(1.dp))
+
+            // 右侧：详情面板
+            Box(modifier = Modifier.weight(1f).fillMaxHeight().padding(16.dp)) {
+                FfDetailPane(
+                    state = state,
+                    onPickSources = {
+                        scope.launch {
+                            val picked = FfFileDialogs.pickDirectories("选择源目录（可多选）")
+                            if (picked.isNotEmpty()) {
+                                state.addSourceDirs(picked)
+                            }
+                        }
+                    },
+                )
             }
         }
     }
