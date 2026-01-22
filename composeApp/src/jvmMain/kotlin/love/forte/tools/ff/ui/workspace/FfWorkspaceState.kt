@@ -21,28 +21,53 @@ import java.util.*
 import kotlin.io.path.absolutePathString
 
 /**
- * 工作区的视图模式
+ * 工作区的视图模式枚举
+ *
+ * 定义工作区可能处于的四种状态，用于驱动 UI 显示不同的面板内容。
  */
 enum class FfWorkspaceViewMode {
-    /** 空闲：未选中任何目标，也不在新增模式 */
+    /** 空闲模式：未选中任何目标，也不在新增模式 */
     Idle,
-    /** 已选中某个受管目标目录 */
+    /** 目标选中模式：已选中某个受管目标目录，显示详情 */
     TargetSelected,
-    /** 新增任务模式 */
+    /** 新增任务模式：正在配置新的迁移任务 */
     AddMode,
-    /** 迁移执行中 */
+    /** 迁移执行中：正在执行迁移操作，显示进度 */
     Migrating,
 }
 
 /**
- * 迁移任务状态
+ * 迁移任务状态枚举
+ *
+ * 表示单个迁移任务的执行状态。
  */
 enum class FfMigrationTaskStatus {
-    Pending, Running, Finished, Failed
+    /** 等待中：任务已创建但尚未开始执行 */
+    Pending,
+    /** 运行中：任务正在执行 */
+    Running,
+    /** 已完成：任务执行成功 */
+    Finished,
+    /** 失败：任务执行失败 */
+    Failed
 }
 
 /**
  * 迁移任务 UI 数据模型
+ *
+ * 用于在迁移执行界面展示单个任务的状态和进度。
+ * 标记为 @Stable 以帮助 Compose 优化重组。
+ *
+ * @property id 任务唯一标识符
+ * @property targetDir 目标目录路径
+ * @property expectedTotalFiles 预期处理的文件总数
+ * @property sources 源目录路径列表
+ * @property status 当前任务状态
+ * @property startedAtEpochMillis 任务开始时间戳（毫秒）
+ * @property finishedAtEpochMillis 任务完成时间戳（毫秒）
+ * @property progress 实时进度数据（运行中时有值）
+ * @property report 最终报告（完成后有值）
+ * @property errorMessage 错误信息（失败时有值）
  */
 @Stable
 data class FfMigrationTaskUi(

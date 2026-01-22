@@ -1,5 +1,8 @@
 package love.forte.tools.ff.ui.workspace.components
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -9,12 +12,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import love.forte.tools.ff.ui.components.FfOutlinedButton
 import love.forte.tools.ff.ui.workspace.FfMigrationTaskStatus
 import love.forte.tools.ff.ui.workspace.FfMigrationTaskUi
 import kotlin.io.path.absolutePathString
+
+/** 迁移成功时进度条的颜色（绿色） */
+private val ProgressColorSuccess = Color(0xFF4CAF50)
 
 /**
  * 迁移执行面板，展示所有迁移任务的进度和状态
@@ -99,6 +106,13 @@ fun FfMigrationPane(
 
 /**
  * 单个迁移任务卡片
+ *
+ * 展示单个迁移任务的详细信息，包括：
+ * - 目标目录名称和完整路径
+ * - 进度条（带颜色过渡动画：完成时由红转绿）
+ * - 详细统计信息（进度、创建、跳过、失败数量）
+ * - 当前处理文件（仅进行中时显示）
+ * - 错误信息（如有）
  */
 @Composable
 private fun FfMigrationTaskCard(task: FfMigrationTaskUi) {
@@ -141,6 +155,23 @@ private fun FfMigrationTaskCard(task: FfMigrationTaskUi) {
         FfMigrationTaskStatus.Failed -> "失败"
     }
 
+    // 进度条颜色：根据任务状态决定目标颜色，使用动画实现平滑过渡
+    // - 完成：绿色（成功色）
+    // - 失败：错误色
+    // - 其他（等待/进行中）：主题主色（红色系）
+    val progressColor by animateColorAsState(
+        targetValue = when (task.status) {
+            FfMigrationTaskStatus.Finished -> ProgressColorSuccess
+            FfMigrationTaskStatus.Failed -> MaterialTheme.colorScheme.error
+            else -> MaterialTheme.colorScheme.primary
+        },
+        animationSpec = tween(
+            durationMillis = 500,
+            easing = FastOutSlowInEasing
+        ),
+        label = "progress-color"
+    )
+
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             // 标题行
@@ -171,8 +202,13 @@ private fun FfMigrationTaskCard(task: FfMigrationTaskUi) {
                 overflow = TextOverflow.Ellipsis,
             )
 
-            // 进度条
-            LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth())
+            // 进度条：使用动画颜色，完成时由红色平滑过渡为绿色
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier.fillMaxWidth(),
+                color = progressColor,
+                trackColor = progressColor.copy(alpha = 0.24f)
+            )
 
             // 详细统计
             Text(
