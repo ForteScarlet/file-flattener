@@ -82,7 +82,7 @@ class FfUpdateService(
                 }
 
                 try {
-                    performUpdate(targetDir, marker, allExtensions, linkConcurrency, onProgress)
+                    performUpdate(targetDir, marker, allExtensions, linkConcurrency, ffFlattenProgressStates, onProgress)
                 } finally {
                     lock.release()
                 }

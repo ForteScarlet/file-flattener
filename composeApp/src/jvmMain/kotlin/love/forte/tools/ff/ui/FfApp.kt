@@ -41,15 +41,28 @@ import java.nio.file.Path
 import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
 
+/** 根路由：Home（首页）或 Panel（功能面板） */
 enum class FfRootRoute { Home, Panel }
 
+/** 功能面板的标签页 */
 enum class FfPanelTab { Workspace, Config, About, Logs }
 
+/** 导航状态：当前路由 + 面板标签页 */
 data class FfNavState(
     val route: FfRootRoute = FfRootRoute.Home,
     val panelTab: FfPanelTab = FfPanelTab.Workspace,
 )
 
+/**
+ * 应用根组件
+ *
+ * 职责：
+ * 1. 初始化数据库和加载引导配置
+ * 2. 管理全局导航状态
+ * 3. 管理应用设置并持久化
+ *
+ * @param onExit 退出应用回调
+ */
 @Preview
 @Composable
 fun FfApp(onExit: () -> Unit = {}) {

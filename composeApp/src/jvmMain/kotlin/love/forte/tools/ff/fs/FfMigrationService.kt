@@ -11,28 +11,45 @@ import kotlinx.coroutines.withContext
 import love.forte.tools.ff.FfConstants
 import java.nio.file.Path
 
+/** 单个迁移任务配置 */
 data class FfMigrationTask(
     val targetDir: Path,
     val sources: List<FfFlattenSourceConfig>,
     val expectedTotalFiles: Int,
 )
 
+/** 单个迁移任务的执行结果 */
 data class FfMigrationTaskResult(
     val task: FfMigrationTask,
     val report: FfFlattenReport?,
     val errorMessage: String?,
 )
 
+/** 整体迁移报告 */
 data class FfMigrationReport(
     val startedAtEpochMillis: Long,
     val finishedAtEpochMillis: Long,
     val taskResults: List<FfMigrationTaskResult>,
 )
 
+/**
+ * 迁移服务：支持多任务并发执行的批量迁移
+ *
+ * 使用信号量控制并发度，确保系统资源合理利用
+ */
 class FfMigrationService(
     private val flattener: FfFlattenService = FfFlattenService(),
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
+    /**
+     * 执行批量迁移
+     *
+     * @param tasks 待执行的迁移任务列表
+     * @param concurrencyLimit 任务并发上限
+     * @param linkConcurrencyPerTask 每个任务内的链接并发数
+     * @param onTaskProgress 单任务进度回调
+     * @return 迁移报告（包含所有任务的结果）
+     */
     suspend fun migrate(
         tasks: List<FfMigrationTask>,
         concurrencyLimit: Int,
