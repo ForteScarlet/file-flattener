@@ -1,53 +1,12 @@
 package love.forte.tools.ff.ui.screens
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.VerticalScrollbar
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.rememberScrollbarAdapter
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.background
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.animation.*
+import androidx.compose.foundation.*
 import androidx.compose.foundation.draganddrop.dragAndDropTarget
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.VerticalDivider
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -63,18 +22,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import love.forte.tools.ff.FfConstants
 import love.forte.tools.ff.FfDefaults
-import love.forte.tools.ff.fs.FfDirectoryScanner
-import love.forte.tools.ff.fs.FfFlattenService
-import love.forte.tools.ff.fs.FfFlattenSourceConfig
-import love.forte.tools.ff.fs.FfFlattenTaskConfig
-import love.forte.tools.ff.fs.FfMarkerFile
-import love.forte.tools.ff.fs.FfMigrationService
-import love.forte.tools.ff.fs.FfMigrationTask
-import love.forte.tools.ff.fs.FfTargetValidation
-import love.forte.tools.ff.fs.FfTargetValidator
-import love.forte.tools.ff.fs.FfUpdateService
-import love.forte.tools.ff.fs.FfUpdateResult
-import love.forte.tools.ff.fs.FfTempCleanupChoice
+import love.forte.tools.ff.fs.*
 import love.forte.tools.ff.storage.FfAppSettings
 import love.forte.tools.ff.storage.FfRegistryStoreAdapter
 import love.forte.tools.ff.ui.components.FfOutlinedButton
@@ -97,7 +45,7 @@ import java.io.File
 import java.net.URI
 import java.nio.file.InvalidPathException
 import java.nio.file.Path
-import java.util.UUID
+import java.util.*
 import kotlin.io.path.absolutePathString
 
 @Composable
@@ -111,12 +59,14 @@ fun FfWorkspaceScreen(
     val migrationService = remember { FfMigrationService(flattener) }
     val updateService = remember { FfUpdateService(flattener) }
 
-    var managedTargets by remember { mutableStateOf<List<FfManagedTargetEntry>>(emptyList()) }
+    var managedTargets = remember { mutableStateListOf<FfManagedTargetEntry>() }
     var selectedTargetDir by remember { mutableStateOf<Path?>(null) }
     var addMode by remember { mutableStateOf(false) }
     var globalMessage by remember { mutableStateOf<String?>(null) }
     var isUpdating by remember { mutableStateOf(false) }
     var pendingTempCleanup by remember { mutableStateOf<Path?>(null) }
+    val ffFlattenProgressStates = remember { FfFlattenProgressStates() }
+    val ffFlattenProgressCollectedStates = ffFlattenProgressStates.collectAsStates()
 
     val drafts = remember { mutableStateListOf<FfDraftTask>() }
 
@@ -139,8 +89,11 @@ fun FfWorkspaceScreen(
     fun reloadTargetsAsync() {
         scope.launch {
             val loaded = withContext(Dispatchers.IO) { registryStoreAdapter.loadTargets() }
-            val entries = withContext(Dispatchers.IO) { FfWorkspaceLoader.loadManagedTargets(loaded) }
-            managedTargets = entries
+            val entries = withContext(Dispatchers.IO) {
+                FfWorkspaceLoader.loadManagedTargets(loaded)
+            }
+            managedTargets.clear()
+            managedTargets.addAll(entries)
             val valid = entries.map { it.targetDir }
             if (valid.size != loaded.size) withContext(Dispatchers.IO) { registryStoreAdapter.saveTargets(valid) }
             if (selectedTargetDir != null && valid.none { it.normalize() == selectedTargetDir?.normalize() }) {
@@ -160,7 +113,9 @@ fun FfWorkspaceScreen(
             val allowed = mutableListOf<Path>()
             var ignoredManaged = 0
             for (dir in unique) {
-                val managed = withContext(Dispatchers.IO) { FfMarkerFile.isManagedDirectory(dir) }
+                val managed = withContext(Dispatchers.IO) {
+                    FfMarkerFile.isManagedDirectory(dir)
+                }
                 if (managed) {
                     ignoredManaged++
                 } else {
@@ -207,7 +162,10 @@ fun FfWorkspaceScreen(
             return
         }
 
-        val grouped = runnable.groupBy { requireNotNull(it.targetDir).toAbsolutePath().normalize().absolutePathString() }
+        val grouped = runnable.groupBy {
+                requireNotNull(it.targetDir).toAbsolutePath().normalize().absolutePathString()
+            }
+
         val tasks = grouped.values.map { group ->
             val targetDir = requireNotNull(group.first().targetDir).toAbsolutePath().normalize()
             val sources = group.map { draft ->
@@ -318,7 +276,14 @@ fun FfWorkspaceScreen(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(text = "工作区", style = MaterialTheme.typography.titleLarge)
                 Spacer(modifier = Modifier.weight(1f))
-                FfOutlinedButton(text = "新增", onClick = { addMode = true; selectedTargetDir = null })
+                if (addMode) {
+                    FfOutlinedButton(text = "取消", onClick = {
+                        addMode = false
+                        drafts.clear()
+                    })
+                } else {
+                    FfOutlinedButton(text = "新增", onClick = { addMode = true; selectedTargetDir = null })
+                }
             }
 
             Spacer(modifier = Modifier.height(10.dp))
@@ -345,6 +310,7 @@ fun FfWorkspaceScreen(
                             onClick = {
                                 selectedTargetDir = entry.targetDir
                                 addMode = false
+                                drafts.clear()
                             },
                         ) {
                             Column(modifier = Modifier.padding(10.dp)) {
@@ -385,6 +351,8 @@ fun FfWorkspaceScreen(
                             migrationTasks.clear()
                             migrationStartedAt = null
                             migrationFinishedAt = null
+                            addMode = false
+                            drafts.clear()
                         }
                     },
                 )
@@ -412,7 +380,9 @@ fun FfWorkspaceScreen(
                             .onFailure { globalMessage = it.message ?: "无法打开目录" }
                     },
                     onOpenSources = onOpenSources@{
-                        val entry = managedTargets.firstOrNull { it.targetDir.normalize() == selectedTargetDir?.normalize() } ?: return@onOpenSources
+                        val entry =
+                            managedTargets.firstOrNull { it.targetDir.normalize() == selectedTargetDir?.normalize() }
+                                ?: return@onOpenSources
                         val sources = entry.sources
                             .asSequence()
                             .mapNotNull { runCatching { Path.of(it) }.getOrNull() }
@@ -430,7 +400,8 @@ fun FfWorkspaceScreen(
                     onRemove = onRemove@{
                         val target = selectedTargetDir ?: return@onRemove
                         scope.launch(Dispatchers.IO) {
-                            val current = registryStoreAdapter.loadTargets().filterNot { it.normalize() == target.normalize() }
+                            val current =
+                                registryStoreAdapter.loadTargets().filterNot { it.normalize() == target.normalize() }
                             registryStoreAdapter.saveTargets(current)
                             withContext(Dispatchers.Main) {
                                 selectedTargetDir = null
@@ -445,6 +416,7 @@ fun FfWorkspaceScreen(
                         scope.launch {
                             val result = updateService.update(
                                 targetDir = target,
+                                ffFlattenProgressStates = ffFlattenProgressStates,
                                 linkConcurrency = FfDefaults.defaultLinkConcurrencyPerTask(settings.concurrencyLimit),
                             )
                             withContext(Dispatchers.Main) {
@@ -454,9 +426,11 @@ fun FfWorkspaceScreen(
                                         reloadTargetsAsync()
                                         globalMessage = "已更新：${target.fileName}"
                                     }
+
                                     is FfUpdateResult.Failed -> {
                                         globalMessage = result.message
                                     }
+
                                     is FfUpdateResult.TrashFailed -> {
                                         pendingTempCleanup = result.tempDir
                                         globalMessage = result.message
@@ -470,7 +444,11 @@ fun FfWorkspaceScreen(
                 )
 
                 else -> {
-                    Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
                         Text(
                             text = "选择左侧目标目录查看详情，或点击“新增”创建迁移任务。",
                             style = MaterialTheme.typography.bodyMedium,
@@ -521,7 +499,13 @@ private fun ManagedTargetPane(
 
             Spacer(modifier = Modifier.height(12.dp))
             Text(text = "源目录", style = MaterialTheme.typography.titleMedium)
-            entry.sources.forEach { Text(text = it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            entry.sources.forEach {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
 
             Spacer(modifier = Modifier.height(12.dp))
             Text(text = "扩展名", style = MaterialTheme.typography.titleMedium)
@@ -532,9 +516,20 @@ private fun ManagedTargetPane(
             )
 
             Spacer(modifier = Modifier.height(18.dp))
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                FfOutlinedButton(text = "打开源目录", onClick = onOpenSources, icon = painterResource(Res.drawable.ic_folder_open))
-                FfPrimaryButton(text = "打开目标目录", onClick = onOpenTarget, icon = painterResource(Res.drawable.ic_folder_open))
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FfOutlinedButton(
+                    text = "打开源目录",
+                    onClick = onOpenSources,
+                    icon = painterResource(Res.drawable.ic_folder_open)
+                )
+                FfPrimaryButton(
+                    text = "打开目标目录",
+                    onClick = onOpenTarget,
+                    icon = painterResource(Res.drawable.ic_folder_open)
+                )
                 FfOutlinedButton(text = "移除", onClick = onRemove, enabled = !isUpdating)
                 FfOutlinedButton(
                     text = if (isUpdating) "更新中…" else "更新",
@@ -594,7 +589,11 @@ private fun AddModePane(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(text = "新增任务", style = MaterialTheme.typography.titleLarge)
             Spacer(modifier = Modifier.weight(1f))
-            FfOutlinedButton(text = "添加源目录", onClick = onPickSources, icon = painterResource(Res.drawable.ic_folder_open))
+            FfOutlinedButton(
+                text = "添加源目录",
+                onClick = onPickSources,
+                icon = painterResource(Res.drawable.ic_folder_open)
+            )
             Spacer(modifier = Modifier.width(8.dp))
             FfPrimaryButton(text = "开始迁移", onClick = onRunAll)
         }
@@ -759,13 +758,22 @@ private fun DraftCard(
                         singleLine = true,
                     )
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         FfOutlinedButton(text = "选择目标", onClick = {
                             scope.launch {
                                 val picked = FfFileDialogs.pickDirectory("选择目标目录")
                                 if (picked != null) {
                                     val validation = withContext(Dispatchers.IO) { FfTargetValidator.validate(picked) }
-                                    onUpdate { it.copy(targetPathText = picked.absolutePathString(), targetDir = picked, targetValidation = validation) }
+                                    onUpdate {
+                                        it.copy(
+                                            targetPathText = picked.absolutePathString(),
+                                            targetDir = picked,
+                                            targetValidation = validation
+                                        )
+                                    }
                                 }
                             }
                         })
@@ -774,8 +782,16 @@ private fun DraftCard(
 
                     when (val state = draft.scanState) {
                         FfScanState.Idle -> Text(text = "等待扫描…", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        FfScanState.Scanning -> Text(text = "扫描中…", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        is FfScanState.Failed -> Text(text = "扫描失败：${state.message}", color = MaterialTheme.colorScheme.error)
+                        FfScanState.Scanning -> Text(
+                            text = "扫描中…",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        is FfScanState.Failed -> Text(
+                            text = "扫描失败：${state.message}",
+                            color = MaterialTheme.colorScheme.error
+                        )
+
                         is FfScanState.Done -> ExtensionsSelector(
                             stats = state.extensionStats,
                             selected = draft.selectedExtensions,
@@ -865,7 +881,7 @@ private fun expectedSelectedCount(draft: FfDraftTask): Int {
 }
 
 private fun extLabel(ext: String, count: Int): String {
-    val label = if (ext == FfConstants.ExtensionNone) "无扩展名" else ".$ext"
+    val label = if (ext == FfConstants.EXTENSION_NONE) "无扩展名" else ".$ext"
     return "$label  ($count)"
 }
 
@@ -958,8 +974,8 @@ private data class FfMigrationTaskUi(
     val status: FfMigrationTaskStatus = FfMigrationTaskStatus.Pending,
     val startedAtEpochMillis: Long? = null,
     val finishedAtEpochMillis: Long? = null,
-    val progress: love.forte.tools.ff.fs.FfFlattenProgress? = null,
-    val report: love.forte.tools.ff.fs.FfFlattenReport? = null,
+    val progress: FfFlattenProgress? = null,
+    val report: FfFlattenReport? = null,
     val errorMessage: String? = null,
 )
 
@@ -1091,7 +1107,11 @@ private fun MigrationTaskCard(task: FfMigrationTaskUi) {
             LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth())
 
             Text(
-                text = "进度：$doneCount / $expected | 创建：$createdLinks | 跳过：$skippedExisting | 失败：$failedLinks | 耗时：${formatDuration(elapsedMs)}",
+                text = "进度：$doneCount / $expected | 创建：$createdLinks | 跳过：$skippedExisting | 失败：$failedLinks | 耗时：${
+                    formatDuration(
+                        elapsedMs
+                    )
+                }",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -1108,7 +1128,11 @@ private fun MigrationTaskCard(task: FfMigrationTaskUi) {
             }
 
             if (!task.errorMessage.isNullOrBlank()) {
-                Text(text = "错误：${task.errorMessage}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                Text(
+                    text = "错误：${task.errorMessage}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
             }
         }
     }

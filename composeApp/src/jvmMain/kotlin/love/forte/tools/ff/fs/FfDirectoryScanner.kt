@@ -40,7 +40,9 @@ object FfDirectoryScanner {
         if (selectedExtensions.isEmpty()) return
         walkFiles(root) { file ->
             val ext = extensionKeyOf(file)
-            if (ext in selectedExtensions) onFile(file)
+            if (ext in selectedExtensions) {
+                onFile(file)
+            }
         }
     }
 
@@ -58,7 +60,7 @@ object FfDirectoryScanner {
                     return FileVisitResult.CONTINUE
                 }
 
-                override fun visitFileFailed(file: Path, exc: IOException?): FileVisitResult = FileVisitResult.CONTINUE
+                override fun visitFileFailed(file: Path, exc: IOException): FileVisitResult = FileVisitResult.CONTINUE
             },
         )
     }
@@ -66,15 +68,15 @@ object FfDirectoryScanner {
     fun extensionKeyOf(file: Path): String {
         val name = file.fileName?.toString().orEmpty()
         val idx = name.lastIndexOf('.')
-        if (idx <= 0 || idx == name.lastIndex) return FfConstants.ExtensionNone
+        if (idx <= 0 || idx == name.lastIndex) return FfConstants.EXTENSION_NONE
         return name.substring(idx + 1).lowercase()
     }
 
     private fun extensionComparator(): Comparator<String> = Comparator { a, b ->
         when {
             a == b -> 0
-            a == FfConstants.ExtensionNone -> -1
-            b == FfConstants.ExtensionNone -> 1
+            a == FfConstants.EXTENSION_NONE -> -1
+            b == FfConstants.EXTENSION_NONE -> 1
             else -> a.compareTo(b)
         }
     }

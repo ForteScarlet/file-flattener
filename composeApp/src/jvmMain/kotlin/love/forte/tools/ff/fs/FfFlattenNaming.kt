@@ -7,23 +7,25 @@ import java.security.MessageDigest
 import kotlin.io.path.invariantSeparatorsPathString
 
 object FfFlattenNaming {
-    private const val HashAlgorithm: String = "SHA-256"
-    private const val HashHexChars: Int = 10
-    private const val MaxBaseLength: Int = 140
-    private const val Separator: String = "__"
-    private const val V2PathSeparator: String = "-"
+    private const val HASH_ALGORITHM: String = "SHA-256"
+    private const val HASH_HEX_CHARS: Int = 10
+    private const val MAX_BASE_LENGTH: Int = 140
+    private const val SEPARATOR: String = "__"
+    private const val V2_PATH_SEPARATOR: String = "-"
+    private const val V3_PATH_SEPARATOR: String = "-"
 
     /**
      * 命名规则 v1：相对路径 + 短哈希，稳定且天然去重。
      */
+    @Deprecated("已过期")
     fun outputFileNameV1(sourceRoot: Path, file: Path): String {
         val relative = sourceRoot.relativize(file).invariantSeparatorsPathString
         val extKey = FfDirectoryScanner.extensionKeyOf(file)
         val base = sanitize(stripExtension(relative))
-        val trimmedBase = base.take(MaxBaseLength)
+        val trimmedBase = base.take(MAX_BASE_LENGTH)
         val id = shortHash("${sourceRoot.toAbsolutePath().normalize()}|$relative")
         val extSuffix = extSuffix(extKey)
-        return "$trimmedBase$Separator$id$extSuffix"
+        return "$trimmedBase$SEPARATOR$id$extSuffix"
     }
 
     /**
@@ -35,6 +37,7 @@ object FfFlattenNaming {
      * - suffixIndex == 0：不加后缀
      * - suffixIndex > 0：追加 `-<suffixIndex>`
      */
+    @Deprecated("已过期")
     fun outputFileNameV2(prefixKey: String, suffixIndex: Int, fileName: String): String {
         val safePrefix = if (prefixKey.isBlank()) "" else sanitizeV2Token(prefixKey)
         val safeName = sanitizeV2Token(fileName)
@@ -43,13 +46,13 @@ object FfFlattenNaming {
         val prefixWithSuffix = when {
             safePrefix.isBlank() -> if (normalizedSuffix == 0) "" else normalizedSuffix.toString()
             normalizedSuffix == 0 -> safePrefix
-            else -> "$safePrefix$V2PathSeparator$normalizedSuffix"
+            else -> "$safePrefix$V2_PATH_SEPARATOR$normalizedSuffix"
         }
 
         return if (prefixWithSuffix.isBlank()) {
             safeName
         } else {
-            "$prefixWithSuffix$V2PathSeparator$safeName"
+            "$prefixWithSuffix$V2_PATH_SEPARATOR$safeName"
         }
     }
 
@@ -59,6 +62,7 @@ object FfFlattenNaming {
      * - 取相对路径的 parent（没有则为空）；
      * - 将每一层级进行安全化后用 "-" 拼接。
      */
+    @Deprecated("已过期")
     fun prefixKeyV2(sourceRoot: Path, file: Path): String {
         val relative = sourceRoot.relativize(file)
         val parent = relative.parent ?: return ""
@@ -67,11 +71,50 @@ object FfFlattenNaming {
             .filter { it.isNotBlank() }
             .map(::sanitizeV2Token)
             .filter { it.isNotBlank() }
-        return parts.joinToString(V2PathSeparator)
+        return parts.joinToString(V2_PATH_SEPARATOR)
+    }
+
+
+    /**
+     * 命名规则 v3：
+     * - 源根目录到目标文件之间的层级使用 "-" 拼接；
+     * - 再拼接文件名（含扩展名）。
+     *
+     * 若同一目标目录下出现“前缀（层级部分）”冲突，则通过 suffixIndex 生成 `prefix-<n>` 变体。
+     * - suffixIndex == 0：不加后缀
+     * - suffixIndex > 0：追加 `-<suffixIndex>`
+     */
+    fun outputFileNameV3(prefixKey: String, suffixIndex: Int, fileName: String): String {
+        val normalizedSuffix = suffixIndex.coerceAtLeast(0)
+        val prefixWithSuffix = when {
+            prefixKey.isBlank() -> if (normalizedSuffix == 0) "" else normalizedSuffix.toString()
+            normalizedSuffix == 0 -> prefixKey
+            else -> "$prefixKey$V3_PATH_SEPARATOR$normalizedSuffix"
+        }
+
+        return if (prefixWithSuffix.isBlank()) {
+            fileName
+        } else {
+            "$prefixWithSuffix$V3_PATH_SEPARATOR$fileName"
+        }
+    }
+
+    /**
+     * v3 前缀（层级部分）：
+     * - file 位于 sourceRoot 下；
+     * - 取相对路径的 parent（没有则为空）；
+     * - 将每一层用 "-" 拼接。
+     */
+    fun prefixKeyV3(sourceRoot: Path, file: Path): String {
+        val relative = sourceRoot.relativize(file)
+        val pathPrefixList = relative.toList()
+        if (pathPrefixList.size <= 1) return ""
+
+        return pathPrefixList.dropLast(1).joinToString(V3_PATH_SEPARATOR)
     }
 
     private fun extSuffix(extKey: String): String =
-        if (extKey == FfConstants.ExtensionNone) "" else ".$extKey"
+        if (extKey == FfConstants.EXTENSION_NONE) "" else ".$extKey"
 
     private fun stripExtension(pathLike: String): String {
         val lastSlash = pathLike.lastIndexOf('/')
@@ -83,8 +126,8 @@ object FfFlattenNaming {
 
     private fun sanitize(raw: String): String {
         return raw
-            .replace("/", Separator)
-            .replace("\\", Separator)
+            .replace("/", SEPARATOR)
+            .replace("\\", SEPARATOR)
             .replace(":", "_")
             .replace(Regex("\\s+"), "_")
             .replace(Regex("[^0-9A-Za-z_\\-\\.]+"), "_")
@@ -94,8 +137,8 @@ object FfFlattenNaming {
 
     private fun sanitizeV2Token(raw: String): String {
         return raw
-            .replace("/", V2PathSeparator)
-            .replace("\\", V2PathSeparator)
+            .replace("/", V2_PATH_SEPARATOR)
+            .replace("\\", V2_PATH_SEPARATOR)
             .replace(":", "_")
             .replace(Regex("\\s+"), "_")
             .replace(Regex("[^0-9A-Za-z_\\-\\.]+"), "_")
@@ -104,9 +147,9 @@ object FfFlattenNaming {
     }
 
     private fun shortHash(text: String): String {
-        val digest = MessageDigest.getInstance(HashAlgorithm)
+        val digest = MessageDigest.getInstance(HASH_ALGORITHM)
             .digest(text.toByteArray(StandardCharsets.UTF_8))
-        return digest.toHex().take(HashHexChars)
+        return digest.toHex().take(HASH_HEX_CHARS)
     }
 
     private fun ByteArray.toHex(): String = buildString(size * 2) {

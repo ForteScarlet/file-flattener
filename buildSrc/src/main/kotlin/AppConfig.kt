@@ -8,7 +8,7 @@ object AppConfig {
     const val APP_NAME_CN = "目录平铺助手"
     const val APP_PACKAGE = "love.forte.tools.file-flattener"
     const val APP_MENU_GROUP = "forteApp"
-    const val DEFAULT_VERSION = "1.0.1" // next: 1.0.2
+    const val DEFAULT_VERSION = "1.0.2" // next: 1.0.3
 
     val appNameWithPackage: String
         get() = "$APP_PACKAGE.$APP_NAME"

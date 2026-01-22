@@ -17,6 +17,10 @@ group = AppConfig.APP_PACKAGE
 version = appVersion
 
 kotlin {
+    compilerOptions {
+        freeCompilerArgs.add("-Xexplicit-backing-fields")
+    }
+
     jvmToolchain {
         languageVersion.set(JavaLanguageVersion.of(21))
         @Suppress("UnstableApiUsage")

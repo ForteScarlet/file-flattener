@@ -10,7 +10,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.util.UUID
-import kotlin.io.path.absolutePathString
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
@@ -54,6 +53,7 @@ class FfUpdateService(
     suspend fun update(
         targetDir: Path,
         linkConcurrency: Int,
+        ffFlattenProgressStates: FfFlattenProgressStates,
         onProgress: (FfFlattenProgress) -> Unit = {},
     ): FfUpdateResult = withContext(Dispatchers.IO) {
         val markerPath = FfMarkerFile.markerPath(targetDir)
@@ -97,6 +97,7 @@ class FfUpdateService(
         marker: FfMarkerConfig,
         allExtensions: Set<String>,
         linkConcurrency: Int,
+        progressStates: FfFlattenProgressStates,
         onProgress: (FfFlattenProgress) -> Unit,
     ): FfUpdateResult {
         // 生成临时目录名
@@ -190,7 +191,7 @@ class FfUpdateService(
         for (file in files) {
             // 跳过目录、.ff 文件和临时目录本身
             if (file.isDirectory()) continue
-            if (file.name == FfConstants.MarkerFileName) continue
+            if (file.name == FfConstants.MARKER_FILE_NAME) continue
 
             // 检查扩展名是否匹配
             val ext = FfDirectoryScanner.extensionKeyOf(file)

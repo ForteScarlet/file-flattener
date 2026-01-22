@@ -14,6 +14,9 @@ enum class FfTargetValidation {
 }
 
 object FfTargetValidator {
+    /**
+     * 验证目标路径并返回验证状态
+     */
     fun validate(target: Path): FfTargetValidation {
         if (!target.exists()) return FfTargetValidation.OkNew
         if (!target.isDirectory()) return FfTargetValidation.NotAllowedNotDirectory

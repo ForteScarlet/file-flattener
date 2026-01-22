@@ -51,12 +51,12 @@ class FfSettingsRepository(
             .selectSettingByKey(FfSettingsKeys.CONCURRENCY_LIMIT)
             .executeAsOneOrNull()
             ?.toIntOrNull()
-            ?.coerceIn(1, FfConstants.MaxLinkConcurrency)
+            ?.coerceIn(1, FfConstants.MAX_LINK_CONCURRENCY)
             ?: FfDefaults.defaultConcurrencyLimit()
     }
 
     private fun setConcurrencyLimit(limit: Int) {
-        val coerced = limit.coerceIn(1, FfConstants.MaxLinkConcurrency)
+        val coerced = limit.coerceIn(1, FfConstants.MAX_LINK_CONCURRENCY)
         database.ffDatabaseQueries.upsertSetting(FfSettingsKeys.CONCURRENCY_LIMIT, coerced.toString())
     }
 }

@@ -39,8 +39,8 @@ class FfMigrationService(
         linkConcurrencyPerTask: Int,
         onTaskProgress: (Path, FfFlattenProgress) -> Unit = { _, _ -> },
     ): FfMigrationReport = withContext(ioDispatcher) {
-        val normalizedLimit = concurrencyLimit.coerceIn(1, FfConstants.MaxLinkConcurrency)
-        val normalizedLinkConcurrency = linkConcurrencyPerTask.coerceIn(1, FfConstants.MaxLinkConcurrency)
+        val normalizedLimit = concurrencyLimit.coerceIn(1, FfConstants.MAX_LINK_CONCURRENCY)
+        val normalizedLinkConcurrency = linkConcurrencyPerTask.coerceIn(1, FfConstants.MAX_LINK_CONCURRENCY)
         val semaphore = Semaphore(normalizedLimit)
 
         val startedAt = System.currentTimeMillis()

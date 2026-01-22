@@ -40,7 +40,7 @@ object FfWorkspaceLoader {
         if (!targetDir.isDirectory()) return 0
         return Files.newDirectoryStream(targetDir).use { dir ->
             dir.asSequence()
-                .filter { it.fileName?.toString() != FfConstants.MarkerFileName }
+                .filter { it.fileName?.toString() != FfConstants.MARKER_FILE_NAME }
                 .count { it.isRegularFile() }
         }
     }
@@ -48,8 +48,8 @@ object FfWorkspaceLoader {
     private fun extensionComparator(): Comparator<String> = Comparator { a, b ->
         when {
             a == b -> 0
-            a == FfConstants.ExtensionNone -> -1
-            b == FfConstants.ExtensionNone -> 1
+            a == FfConstants.EXTENSION_NONE -> -1
+            b == FfConstants.EXTENSION_NONE -> 1
             else -> a.compareTo(b)
         }
     }

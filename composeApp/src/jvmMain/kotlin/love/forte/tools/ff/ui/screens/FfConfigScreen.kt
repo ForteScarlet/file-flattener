@@ -178,12 +178,12 @@ fun FfConfigScreen(
             Spacer(modifier = Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FfOutlinedButton(text = " - ", onClick = {
-                    val next = (settings.concurrencyLimit - 1).coerceIn(1, FfConstants.MaxLinkConcurrency)
+                    val next = (settings.concurrencyLimit - 1).coerceIn(1, FfConstants.MAX_LINK_CONCURRENCY)
                     onUpdateSettings(settings.copy(concurrencyLimit = next))
                 })
                 Text(text = settings.concurrencyLimit.toString(), style = MaterialTheme.typography.titleLarge)
                 FfOutlinedButton(text = " + ", onClick = {
-                    val next = (settings.concurrencyLimit + 1).coerceIn(1, FfConstants.MaxLinkConcurrency)
+                    val next = (settings.concurrencyLimit + 1).coerceIn(1, FfConstants.MAX_LINK_CONCURRENCY)
                     onUpdateSettings(settings.copy(concurrencyLimit = next))
                 })
             }

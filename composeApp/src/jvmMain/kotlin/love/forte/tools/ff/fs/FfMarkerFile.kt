@@ -3,6 +3,7 @@ package love.forte.tools.ff.fs
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import love.forte.tools.ff.FfConstants
+import love.forte.tools.ff.FfNamingVersion
 import love.forte.tools.ff.serialization.FfJson
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -20,15 +21,16 @@ data class FfMarkerSource(
 
 @Serializable
 data class FfMarkerConfig(
-    val schemaVersion: Int = FfConstants.MarkerSchemaVersion,
-    val namingVersion: Int = FfConstants.NamingVersion,
+    val schemaVersion: Int = FfConstants.MARKER_SCHEMA_VERSION,
+    val namingVersion: FfNamingVersion = FfConstants.NAMING_VERSION,
     val createdAtEpochMillis: Long,
     val updatedAtEpochMillis: Long,
     val sources: List<FfMarkerSource>,
-)
+) {
+}
 
 object FfMarkerFile {
-    fun markerPath(directory: Path): Path = directory.resolve(FfConstants.MarkerFileName)
+    fun markerPath(directory: Path): Path = directory.resolve(FfConstants.MARKER_FILE_NAME)
 
     fun isManagedDirectory(directory: Path): Boolean {
         if (!directory.exists() || !directory.isDirectory()) return false
@@ -60,10 +62,12 @@ object FfMarkerFile {
     }
 
     private fun trySetHiddenOnWindows(path: Path) {
-        if (!isWindows()) return
-        runCatching {
-            Files.setAttribute(path, "dos:hidden", true)
+        if (isWindows()) {
+            runCatching {
+                Files.setAttribute(path, "dos:hidden", true)
+            }
         }
+
     }
 
     private fun isWindows(): Boolean =

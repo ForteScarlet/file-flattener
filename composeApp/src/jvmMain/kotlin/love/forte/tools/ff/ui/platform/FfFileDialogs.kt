@@ -57,12 +57,15 @@ object FfFileDialogs {
 
     /**
      * 说明：
-     * - JDK 标准库里，目录选择的“原生对话框”能力存在平台差异；
+     * - JDK 标准库里，目录选择的"原生对话框"能力存在平台差异；
      * - macOS 可通过 apple 属性让 AWT FileDialog 以目录模式工作；
-     * - Windows / Linux 取决于 JDK/桌面环境是否支持目录模式，若失败则回退 Swing。
+     * - Windows 上原生 FileDialog 不支持目录选择模式，直接使用 Swing 的 JFileChooser；
+     * - Linux 取决于 JDK/桌面环境是否支持目录模式，若失败则回退 Swing。
      */
     private fun pickDirectoriesNativeIfSupported(title: String): NativePickDirectoriesResult {
-        if (!isMacOs() && !isWindows() && !isLinux()) return NativePickDirectoriesResult(supported = false, selected = emptyList())
+        // Windows 上原生 FileDialog 不支持目录选择，直接跳过使用 Swing
+        if (isWindows()) return NativePickDirectoriesResult(supported = false, selected = emptyList())
+        if (!isMacOs() && !isLinux()) return NativePickDirectoriesResult(supported = false, selected = emptyList())
 
         return withDirectoryDialogProperty {
             val dialog = FileDialog(null as Frame?, title, FileDialog.LOAD).apply {
@@ -82,7 +85,9 @@ object FfFileDialogs {
     }
 
     private fun pickDirectoryNativeIfSupported(title: String): NativePickDirectoryResult {
-        if (!isMacOs() && !isWindows() && !isLinux()) return NativePickDirectoryResult(supported = false, selected = null)
+        // Windows 上原生 FileDialog 不支持目录选择，直接跳过使用 Swing
+        if (isWindows()) return NativePickDirectoryResult(supported = false, selected = null)
+        if (!isMacOs() && !isLinux()) return NativePickDirectoryResult(supported = false, selected = null)
 
         return withDirectoryDialogProperty {
             val dialog = FileDialog(null as Frame?, title, FileDialog.LOAD).apply {
