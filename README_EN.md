@@ -60,10 +60,44 @@ All files are centralized in a single directory without consuming extra disk spa
 
 ## Application Screenshots
 
-![Home.png](.github/images/Home.png)
-![Workspace.png](.github/images/Workspace.png)
-![Config.png](.github/images/Config.png)
-![Workspace-Add1.png](.github/images/Workspace-Add1.png)
-![Workspace-Add2.png](.github/images/Workspace-Add2.png)
-![Workspace-Work.png](.github/images/Workspace-Work.png)
-![Workspace-Detail.png](.github/images/Workspace-Detail.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/images/Home_dark.png">
+  <source media="(prefers-color-scheme: light)" srcset=".github/images/Home.png">
+  <img alt="Home" src=".github/images/Home.png">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/images/Workspace_dark.png">
+  <source media="(prefers-color-scheme: light)" srcset=".github/images/Workspace.png">
+  <img alt="Workspace" src=".github/images/Workspace.png">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/images/Config_dark.png">
+  <source media="(prefers-color-scheme: light)" srcset=".github/images/Config.png">
+  <img alt="Config" src=".github/images/Config.png">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/images/Workspace-Add1_dark.png">
+  <source media="(prefers-color-scheme: light)" srcset=".github/images/Workspace-Add1.png">
+  <img alt="Workspace-Add1" src=".github/images/Workspace-Add1.png">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/images/Workspace-Add2_dark.png">
+  <source media="(prefers-color-scheme: light)" srcset=".github/images/Workspace-Add2.png">
+  <img alt="Workspace-Add2" src=".github/images/Workspace-Add2.png">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/images/Workspace-Work_dark.png">
+  <source media="(prefers-color-scheme: light)" srcset=".github/images/Workspace-Work.png">
+  <img alt="Workspace-Work" src=".github/images/Workspace-Work.png">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/images/Workspace-Detail_dark.png">
+  <source media="(prefers-color-scheme: light)" srcset=".github/images/Workspace-Detail.png">
+  <img alt="Workspace-Detail" src=".github/images/Workspace-Detail.png">
+</picture>
