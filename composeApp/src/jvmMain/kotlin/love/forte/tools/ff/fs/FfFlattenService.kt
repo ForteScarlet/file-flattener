@@ -5,16 +5,17 @@ import androidx.compose.runtime.IntState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.asIntState
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.remember
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.getAndUpdate
-import kotlinx.coroutines.flow.updateAndGet
 import love.forte.tools.ff.FfConstants
 import love.forte.tools.ff.FfNamingVersion
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.io.path.absolutePathString
@@ -34,34 +35,37 @@ data class FfFlattenTaskConfig(
 )
 
 class FfFlattenProgressStates(
-    expectedTotalFiles: MutableStateFlow<Int> = MutableStateFlow(0),
-    completedFiles: MutableStateFlow<Int> = MutableStateFlow(0),
-    createdLinks: MutableStateFlow<Int> = MutableStateFlow(0),
-    skippedExisting: MutableStateFlow<Int> = MutableStateFlow(0),
-    failedLinks: MutableStateFlow<Int> = MutableStateFlow(0),
-    currentFile: MutableStateFlow<String?> = MutableStateFlow(null)
+    initial: FfFlattenProgress = FfFlattenProgress(
+        expectedTotalFiles = 0,
+        completedFiles = 0,
+        createdLinks = 0,
+        skippedExisting = 0,
+        failedLinks = 0,
+        currentFile = null,
+    ),
 ) {
-    val expectedTotalFiles: StateFlow<Int>
-        field: MutableStateFlow<Int> = expectedTotalFiles
-    val completedFiles: StateFlow<Int>
-        field: MutableStateFlow<Int> = completedFiles
-    val createdLinks: StateFlow<Int>
-        field: MutableStateFlow<Int> = createdLinks
-    val skippedExisting: StateFlow<Int>
-        field: MutableStateFlow<Int> = skippedExisting
-    val failedLinks: StateFlow<Int>
-        field: MutableStateFlow<Int> = failedLinks
-    val currentFile: StateFlow<String?>
-        field: MutableStateFlow<String?> = currentFile
+    private val _progress = MutableStateFlow(initial)
+    val progress: StateFlow<FfFlattenProgress> = _progress
 
-    fun expectedTotalFilesInc(): Int = expectedTotalFiles.incrementAndGet()
-    fun completedFilesInc(): Int = completedFiles.incrementAndGet()
-    fun createdLinksInc(): Int = createdLinks.incrementAndGet()
-    fun skippedExistingInc(): Int = skippedExisting.incrementAndGet()
-    fun failedLinksInc(): Int = failedLinks.incrementAndGet()
-    fun currentFileSet(file: String?) {
-        currentFile.value = file
+    fun reset(expectedTotalFiles: Int) {
+        _progress.value = FfFlattenProgress(
+            expectedTotalFiles = expectedTotalFiles,
+            completedFiles = 0,
+            createdLinks = 0,
+            skippedExisting = 0,
+            failedLinks = 0,
+            currentFile = null,
+        )
     }
+
+    fun updateFrom(progress: FfFlattenProgress) {
+        _progress.value = progress
+    }
+}
+
+@Composable
+fun FfFlattenProgressStates.collectAsState(): State<FfFlattenProgress> {
+    return progress.collectAsState()
 }
 
 class FfFlattenProgressCollectedStates(
@@ -75,13 +79,20 @@ class FfFlattenProgressCollectedStates(
 
 @Composable
 fun FfFlattenProgressStates.collectAsStates(): FfFlattenProgressCollectedStates {
+    val progressState = progress.collectAsState()
+    val expectedTotalFiles = remember { derivedStateOf { progressState.value.expectedTotalFiles } }.asIntState()
+    val completedFiles = remember { derivedStateOf { progressState.value.completedFiles } }.asIntState()
+    val createdLinks = remember { derivedStateOf { progressState.value.createdLinks } }.asIntState()
+    val skippedExisting = remember { derivedStateOf { progressState.value.skippedExisting } }.asIntState()
+    val failedLinks = remember { derivedStateOf { progressState.value.failedLinks } }.asIntState()
+    val currentFile = remember { derivedStateOf { progressState.value.currentFile } }
     return FfFlattenProgressCollectedStates(
-        expectedTotalFiles = expectedTotalFiles.collectAsState().asIntState(),
-        completedFiles = completedFiles.collectAsState().asIntState(),
-        createdLinks = createdLinks.collectAsState().asIntState(),
-        skippedExisting = skippedExisting.collectAsState().asIntState(),
-        failedLinks = failedLinks.collectAsState().asIntState(),
-        currentFile = currentFile.collectAsState(),
+        expectedTotalFiles = expectedTotalFiles,
+        completedFiles = completedFiles,
+        createdLinks = createdLinks,
+        skippedExisting = skippedExisting,
+        failedLinks = failedLinks,
+        currentFile = currentFile,
     )
 }
 
@@ -111,6 +122,7 @@ class FfFlattenService(
 ) {
     suspend fun flatten(
         config: FfFlattenTaskConfig,
+        progressStates: FfFlattenProgressStates? = null,
         onProgress: (FfFlattenProgress) -> Unit = {},
     ): FfFlattenReport {
 
@@ -139,10 +151,10 @@ class FfFlattenService(
         )
         FfMarkerFile.write(config.targetDir, markerConfig)
 
-        val completed = MutableStateFlow(0)
-        val created = MutableStateFlow(0)
-        val skipped = MutableStateFlow(0)
-        val failed = MutableStateFlow(0)
+        val completed = AtomicInteger(0)
+        val created = AtomicInteger(0)
+        val skipped = AtomicInteger(0)
+        val failed = AtomicInteger(0)
         val errors = ConcurrentLinkedQueue<String>()
         val currentFile = AtomicReference<String?>(null)
 
@@ -152,8 +164,9 @@ class FfFlattenService(
             namingVersion = namingVersion,
         )
         val expectedTotalFiles = (config.expectedTotalFiles ?: tasks.size).coerceAtLeast(0)
+        progressStates?.reset(expectedTotalFiles)
         val progressEmitter =
-            ProgressEmitter(expectedTotalFiles, completed, created, skipped, failed, currentFile, onProgress)
+            ProgressEmitter(expectedTotalFiles, completed, created, skipped, failed, currentFile, progressStates, onProgress)
 
         progressEmitter.tryEmit()
 
@@ -188,10 +201,10 @@ class FfFlattenService(
             startedAtEpochMillis = startedAt,
             finishedAtEpochMillis = finishedAt,
             expectedTotalFiles = expectedTotalFiles,
-            completedFiles = completed.value,
-            createdLinks = created.value,
-            skippedExisting = skipped.value,
-            failedLinks = failed.value,
+            completedFiles = completed.get(),
+            createdLinks = created.get(),
+            skippedExisting = skipped.get(),
+            failedLinks = failed.get(),
             errors = errors.toList(),
         )
     }
@@ -199,10 +212,10 @@ class FfFlattenService(
     private fun CoroutineScope.launchWorker(
         dispatcher: CoroutineDispatcher,
         task: LinkTask,
-        completed: MutableStateFlow<Int>,
-        created: MutableStateFlow<Int>,
-        skipped: MutableStateFlow<Int>,
-        failed: MutableStateFlow<Int>,
+        completed: AtomicInteger,
+        created: AtomicInteger,
+        skipped: AtomicInteger,
+        failed: AtomicInteger,
         errors: MutableCollection<String>,
         currentFile: AtomicReference<String?>,
         progressEmitter: ProgressEmitter,
@@ -233,11 +246,12 @@ class FfFlattenService(
 
     private class ProgressEmitter(
         private val expectedTotalFiles: Int,
-        private val completed: MutableStateFlow<Int>,
-        private val created: MutableStateFlow<Int>,
-        private val skipped: MutableStateFlow<Int>,
-        private val failed: MutableStateFlow<Int>,
+        private val completed: AtomicInteger,
+        private val created: AtomicInteger,
+        private val skipped: AtomicInteger,
+        private val failed: AtomicInteger,
         private val currentFile: AtomicReference<String?>,
+        private val progressStates: FfFlattenProgressStates?,
         private val onProgress: (FfFlattenProgress) -> Unit,
     ) {
         private val lastEmitAt = AtomicLong(0)
@@ -259,16 +273,16 @@ class FfFlattenService(
         }
 
         private fun emit() {
-            onProgress(
-                FfFlattenProgress(
-                    expectedTotalFiles = expectedTotalFiles,
-                    completedFiles = completed.value,
-                    createdLinks = created.value,
-                    skippedExisting = skipped.value,
-                    failedLinks = failed.value,
-                    currentFile = currentFile.get(),
-                ),
+            val progress = FfFlattenProgress(
+                expectedTotalFiles = expectedTotalFiles,
+                completedFiles = completed.get(),
+                createdLinks = created.get(),
+                skippedExisting = skipped.get(),
+                failedLinks = failed.get(),
+                currentFile = currentFile.get(),
             )
+            progressStates?.updateFrom(progress)
+            onProgress(progress)
         }
     }
 
@@ -404,5 +418,3 @@ class FfFlattenService(
         }
     }
 }
-
-internal fun MutableStateFlow<Int>.incrementAndGet(): Int = updateAndGet { it + 1 }

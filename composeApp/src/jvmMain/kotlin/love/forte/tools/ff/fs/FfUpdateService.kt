@@ -59,6 +59,7 @@ class FfUpdateService(
         ffFlattenProgressStates: FfFlattenProgressStates,
         onProgress: (FfFlattenProgress) -> Unit = {},
     ): FfUpdateResult = withContext(ioDispatcher) {
+        ffFlattenProgressStates.reset(0)
         val markerPath = FfMarkerFile.markerPath(targetDir)
         if (!markerPath.exists() || !markerPath.isRegularFile()) {
             return@withContext FfUpdateResult.Failed(".ff 配置文件不存在")
@@ -137,6 +138,7 @@ class FfUpdateService(
                     expectedTotalFiles = null,
                     linkConcurrency = linkConcurrency,
                 ),
+                progressStates = progressStates,
                 onProgress = onProgress,
             )
         }
