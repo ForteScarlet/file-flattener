@@ -1,8 +1,9 @@
 package love.forte.tools.ff.fs
 
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import love.forte.tools.ff.FfConstants
+import org.koin.core.annotation.Single
 import java.awt.Desktop
 import java.io.RandomAccessFile
 import java.nio.channels.FileLock
@@ -38,8 +39,10 @@ enum class FfTempCleanupChoice {
 /**
  * 更新服务：安全地更新受管目录
  */
+@Single
 class FfUpdateService(
     private val flattenService: FfFlattenService,
+    private val ioDispatcher: CoroutineDispatcher,
 ) {
     /**
      * 执行更新操作
@@ -55,7 +58,7 @@ class FfUpdateService(
         linkConcurrency: Int,
         ffFlattenProgressStates: FfFlattenProgressStates,
         onProgress: (FfFlattenProgress) -> Unit = {},
-    ): FfUpdateResult = withContext(Dispatchers.IO) {
+    ): FfUpdateResult = withContext(ioDispatcher) {
         val markerPath = FfMarkerFile.markerPath(targetDir)
         if (!markerPath.exists() || !markerPath.isRegularFile()) {
             return@withContext FfUpdateResult.Failed(".ff 配置文件不存在")
@@ -250,7 +253,7 @@ class FfUpdateService(
     suspend fun cleanupTempDir(
         tempDir: Path,
         choice: FfTempCleanupChoice,
-    ): Boolean = withContext(Dispatchers.IO) {
+    ): Boolean = withContext(ioDispatcher) {
         when (choice) {
             FfTempCleanupChoice.DeleteDirectly -> {
                 runCatching {

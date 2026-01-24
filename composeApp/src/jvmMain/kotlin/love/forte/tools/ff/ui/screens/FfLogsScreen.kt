@@ -23,7 +23,8 @@ fun FfLogsScreen() {
         ) {
             Text(text = "日志", style = MaterialTheme.typography.headlineSmall)
             Text(
-                text = "本期仅保留页面布局；后续可接入操作流、失败原因聚合、导出等能力。",
+                // text = "本期仅保留页面布局；后续可接入操作流、失败原因聚合、导出等能力。",
+                text = "敬请期待。",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

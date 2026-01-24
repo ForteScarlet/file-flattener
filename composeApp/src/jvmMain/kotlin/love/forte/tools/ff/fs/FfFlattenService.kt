@@ -19,6 +19,7 @@ import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.exists
+import org.koin.core.annotation.Single
 
 data class FfFlattenSourceConfig(
     val sourceDir: Path,
@@ -104,8 +105,9 @@ data class FfFlattenReport(
     val errors: List<String>,
 )
 
+@Single
 class FfFlattenService(
-    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val ioDispatcher: CoroutineDispatcher,
 ) {
     suspend fun flatten(
         config: FfFlattenTaskConfig,

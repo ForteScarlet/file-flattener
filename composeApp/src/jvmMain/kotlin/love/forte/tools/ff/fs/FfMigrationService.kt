@@ -1,7 +1,6 @@
 package love.forte.tools.ff.fs
 
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -9,6 +8,7 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import love.forte.tools.ff.FfConstants
+import org.koin.core.annotation.Single
 import java.nio.file.Path
 
 /** 单个迁移任务配置 */
@@ -37,9 +37,10 @@ data class FfMigrationReport(
  *
  * 使用信号量控制并发度，确保系统资源合理利用
  */
+@Single
 class FfMigrationService(
-    private val flattener: FfFlattenService = FfFlattenService(),
-    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val flattener: FfFlattenService,
+    private val ioDispatcher: CoroutineDispatcher,
 ) {
     /**
      * 执行批量迁移
@@ -91,4 +92,3 @@ class FfMigrationService(
         )
     }
 }
-

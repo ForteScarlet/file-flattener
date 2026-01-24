@@ -13,6 +13,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import love.forte.tools.ff.fs.FfMigrationService
+import love.forte.tools.ff.fs.FfUpdateService
 import love.forte.tools.ff.storage.FfAppSettings
 import love.forte.tools.ff.storage.FfRegistryStoreAdapter
 import love.forte.tools.ff.ui.components.FfOutlinedButton
@@ -22,6 +24,7 @@ import love.forte.tools.ff.ui.workspace.FfWorkspaceViewMode
 import love.forte.tools.ff.ui.workspace.components.FfAddModePane
 import love.forte.tools.ff.ui.workspace.components.FfManagedTargetPane
 import love.forte.tools.ff.ui.workspace.components.FfMigrationPane
+import org.koin.compose.koinInject
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 
@@ -44,10 +47,12 @@ fun FfWorkspaceScreen(
     settings: FfAppSettings,
 ) {
     val scope = rememberCoroutineScope()
+    val migrationService: FfMigrationService = koinInject()
+    val updateService: FfUpdateService = koinInject()
 
     // 创建并记住状态持有者
-    val state = remember(registryStoreAdapter, settings) {
-        FfWorkspaceState(scope, registryStoreAdapter, settings)
+    val state = remember(registryStoreAdapter, settings, migrationService, updateService) {
+        FfWorkspaceState(scope, registryStoreAdapter, settings, migrationService, updateService)
     }
 
     // 初始化时加载数据

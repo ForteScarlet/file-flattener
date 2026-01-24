@@ -92,19 +92,17 @@ data class FfMigrationTaskUi(
  * @param scope 协程作用域，用于异步操作
  * @param registryStoreAdapter 目标目录注册表适配器
  * @param settings 应用设置
+ * @param migrationService 迁移服务
+ * @param updateService 更新服务
  */
 @Stable
 class FfWorkspaceState(
     private val scope: CoroutineScope,
     private val registryStoreAdapter: FfRegistryStoreAdapter,
     private val settings: FfAppSettings,
+    private val migrationService: FfMigrationService,
+    private val updateService: FfUpdateService,
 ) {
-    // region 核心服务
-    private val flattener = FfFlattenService()
-    private val migrationService = FfMigrationService(flattener)
-    private val updateService = FfUpdateService(flattener)
-    // endregion
-
     // region 受管目标列表
     private val _managedTargets = mutableStateListOf<FfManagedTargetEntry>()
     val managedTargets: SnapshotStateList<FfManagedTargetEntry> get() = _managedTargets

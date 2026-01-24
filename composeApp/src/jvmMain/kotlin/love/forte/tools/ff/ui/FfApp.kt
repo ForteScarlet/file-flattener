@@ -36,6 +36,7 @@ import love.forte.tools.ff.storage.FfSettingsStoreAdapter
 import love.forte.tools.ff.ui.screens.FfHomeScreen
 import love.forte.tools.ff.ui.screens.FfPanelScreen
 import love.forte.tools.ff.ui.theme.FfTheme
+import org.koin.compose.koinInject
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.exists
@@ -67,9 +68,9 @@ data class FfNavState(
 @Composable
 fun FfApp(onExit: () -> Unit = {}) {
     val bootstrapDir = remember { FfAppPaths.defaultAppDir() }
-    val bootstrapStore = remember(bootstrapDir) { FfBootstrapStore(bootstrapDir) }
+    val bootstrapStore: FfBootstrapStore = koinInject()
+    val databaseManager: FfDatabaseManager = koinInject()
     val scope = rememberCoroutineScope()
-    val databaseManager = remember { FfDatabaseManager.getInstance() }
 
     var settings by remember { mutableStateOf(FfAppSettings()) }
     var navState by remember { mutableStateOf(FfNavState()) }
