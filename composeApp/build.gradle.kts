@@ -46,6 +46,10 @@ kotlin {
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.coroutinesCore)
+            // Koin
+            implementation(project.dependencies.platform(libs.koin.bom))
+            implementation(libs.koin.compose)
+            implementation(libs.koin.compose.viewmodel)
         }
 
         commonTest.dependencies {
@@ -56,6 +60,7 @@ kotlin {
             // implementation(libs.compose.desktop)
             implementation(libs.kotlinx.coroutinesSwing)
             implementation(libs.sqldelight.jvm)
+            implementation(libs.conveyor.control)
         }
     }
 }
@@ -89,6 +94,8 @@ compose.desktop {
             "-XX:ErrorFile=.logs/hs_err.log",
             "-XX:-HeapDumpOnOutOfMemoryError",
             "-XX:HeapDumpPath=.logs/dump.hprof",
+            "-XX:+UseZGC",
+            "-XX:+ZGenerational"
         )
 
         nativeDistributions {

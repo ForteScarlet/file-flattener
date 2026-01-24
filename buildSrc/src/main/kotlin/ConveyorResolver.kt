@@ -68,7 +68,7 @@ fun Project.resolveConveyorExecutable(): File {
     if (fromCommonDirs != null) return fromCommonDirs
 
     // 从 NVM 目录查找
-    val nvmDir = homeDir.resolve(".nvm/versions/node")
+    val nvmDir = homeDir.resolve(".nvm/version/node")
     val fromNvm = nvmDir.listFiles()
         ?.asSequence()
         ?.filter { it.isDirectory }
