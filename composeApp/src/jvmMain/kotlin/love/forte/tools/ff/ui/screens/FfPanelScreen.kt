@@ -33,17 +33,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import love.forte.tools.ff.storage.FfAppSettings
 import love.forte.tools.ff.storage.FfRegistryStoreAdapter
 import love.forte.tools.ff.ui.FfPanelTab
 import love.forte.tools.ff.ui.FfSharedKeys
 import love.forte.tools.ff.ui.ffSharedNavModifier
+import love.forte.tools.ff.ui.components.FfNewBadge
 import love.forte.tools.ff.ui.components.FfOutlinedButton
 import love.forte.tools.ff.ui.components.FfPrimaryButton
 import love.forte.tools.ff.FfBuildConfig
+import love.forte.tools.ff.version.FfAppUpdateManager
 import love.forte.tools.file_flattener.composeapp.generated.resources.Res
 import love.forte.tools.file_flattener.composeapp.generated.resources.ic_arrow_back
 import org.jetbrains.compose.resources.painterResource
+import org.koin.compose.koinInject
 import java.nio.file.Path
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -60,6 +64,9 @@ fun FfPanelScreen(
     onBackToHome: () -> Unit,
 ) {
     var tab by remember { mutableStateOf(initialTab) }
+    val updateManager: FfAppUpdateManager = koinInject()
+    val updateState by updateManager.state.collectAsStateWithLifecycle()
+    val showNewBadge = updateState.updateAvailable
 
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
@@ -138,6 +145,10 @@ fun FfPanelScreen(
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            if (showNewBadge) {
+                Spacer(modifier = Modifier.width(8.dp))
+                FfNewBadge(onClick = { tab = FfPanelTab.About })
+            }
         }
     }
 }

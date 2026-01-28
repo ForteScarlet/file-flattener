@@ -3,11 +3,13 @@ package love.forte.tools.ff.ui.components
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.foundation.Image
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -68,6 +70,34 @@ fun FfOutlinedButton(
             Spacer(modifier = Modifier.width(FfIconSpacer))
         }
         Text(text)
+    }
+}
+
+@Composable
+fun FfLoadingOutlinedButton(
+    text: String,
+    loading: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    loadingText: String = "检查中",
+) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = modifier.defaultMinSize(minHeight = FfButtonMinHeight),
+        enabled = enabled && !loading,
+        shape = FfButtonShape,
+        contentPadding = FfButtonPadding,
+        colors = ButtonDefaults.outlinedButtonColors(),
+    ) {
+        if (loading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(16.dp),
+                strokeWidth = 2.dp,
+            )
+            Spacer(modifier = Modifier.width(FfIconSpacer))
+        }
+        Text(if (loading) loadingText else text)
     }
 }
 

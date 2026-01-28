@@ -36,6 +36,7 @@ import love.forte.tools.ff.storage.FfSettingsStoreAdapter
 import love.forte.tools.ff.ui.screens.FfHomeScreen
 import love.forte.tools.ff.ui.screens.FfPanelScreen
 import love.forte.tools.ff.ui.theme.FfTheme
+import love.forte.tools.ff.version.FfAppUpdateManager
 import org.koin.compose.koinInject
 import java.nio.file.Files
 import java.nio.file.Path
@@ -70,6 +71,7 @@ fun FfApp(onExit: () -> Unit = {}) {
     val bootstrapDir = remember { FfAppPaths.defaultAppDir() }
     val bootstrapStore: FfBootstrapStore = koinInject()
     val databaseManager: FfDatabaseManager = koinInject()
+    val updateManager: FfAppUpdateManager = koinInject()
     val scope = rememberCoroutineScope()
 
     var settings by remember { mutableStateOf(FfAppSettings()) }
@@ -94,6 +96,10 @@ fun FfApp(onExit: () -> Unit = {}) {
         val bootstrap = withContext(Dispatchers.IO) { bootstrapStore.load() }
         val resolved = bootstrap.userDataDir?.toAbsolutePath()?.normalize() ?: bootstrapDir
         userDataDir = resolved
+    }
+
+    LaunchedEffect(Unit) {
+        updateManager.checkForUpdates()
     }
 
     LaunchedEffect(userDataDir) {

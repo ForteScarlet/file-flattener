@@ -9,18 +9,25 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
 import love.forte.tools.ff.FfBuildConfig
 import love.forte.tools.ff.ui.components.FfCenteredContentLayout
+import love.forte.tools.ff.ui.components.FfLoadingOutlinedButton
+import love.forte.tools.ff.ui.components.FfNewBadge
 import love.forte.tools.ff.ui.components.FfOutlinedButton
+import love.forte.tools.ff.ui.components.FfPrimaryButton
+import love.forte.tools.ff.version.FfAppUpdateManager
 import love.forte.tools.file_flattener.composeapp.generated.resources.Res
 import love.forte.tools.file_flattener.composeapp.generated.resources.icon
 import org.jetbrains.compose.resources.painterResource
+import org.koin.compose.koinInject
 import java.awt.Desktop
 import java.net.URI
 import kotlin.time.Duration.Companion.seconds
@@ -42,6 +49,8 @@ fun FfAboutScreen() {
     var showSystemPropertiesWindow by remember { mutableStateOf(false) }
     var showEnvVariablesWindow by remember { mutableStateOf(false) }
     val availableProcessors = remember { Runtime.getRuntime().availableProcessors() }
+    val scope = rememberCoroutineScope()
+    val updateManager: FfAppUpdateManager = koinInject()
 
     val memoryState by flow {
         while (true) {
@@ -49,6 +58,12 @@ fun FfAboutScreen() {
             emit(Runtime.getRuntime().memoryState())
         }
     }.collectAsStateWithLifecycle(Runtime.getRuntime().memoryState())
+
+    val updateState by updateManager.state.collectAsStateWithLifecycle()
+    val showNewBadge = updateState.updateAvailable
+    val isChecking = updateState.isChecking
+    val canTriggerUpdate = updateState.canTriggerUpdate
+    val updateErrorMessage = updateState.errorMessage
 
     FfCenteredContentLayout {
         Column(
@@ -69,11 +84,42 @@ fun FfAboutScreen() {
             Spacer(modifier = Modifier.height(12.dp))
             Text(text = "版本", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(6.dp))
-            Text(
-                text = FfBuildConfig.VERSION,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = FfBuildConfig.VERSION,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                if (showNewBadge) {
+                    FfNewBadge()
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                FfLoadingOutlinedButton(
+                    text = "检查更新",
+                    loading = isChecking,
+                    loadingText = "检查中",
+                    onClick = { scope.launch { updateManager.checkForUpdates() } },
+                )
+                if (showNewBadge) {
+                    FfPrimaryButton(
+                        text = "更新",
+                        enabled = canTriggerUpdate,
+                        onClick = { updateManager.triggerUpdate() },
+                    )
+                }
+            }
+
+            if (!updateErrorMessage.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = updateErrorMessage,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
 
             Spacer(modifier = Modifier.height(12.dp))
             Text(text = "开源地址", style = MaterialTheme.typography.titleMedium)
@@ -122,10 +168,12 @@ fun FfAboutScreen() {
     }
 
     if (showSystemPropertiesWindow) {
+        @Suppress("AssignedValueIsNeverRead")
         FfSystemPropertiesWindow(onClose = { showSystemPropertiesWindow = false })
     }
 
     if (showEnvVariablesWindow) {
+        @Suppress("AssignedValueIsNeverRead")
         FfEnvVariablesWindow(onClose = { showEnvVariablesWindow = false })
     }
 }

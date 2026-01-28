@@ -4,28 +4,25 @@ import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import love.forte.tools.ff.ui.FfSharedKeys
-import love.forte.tools.ff.ui.ffSharedNavModifier
+import love.forte.tools.ff.ui.components.FfNewBadge
 import love.forte.tools.ff.ui.components.FfOutlinedButton
 import love.forte.tools.ff.ui.components.FfPrimaryButton
 import love.forte.tools.ff.ui.components.FfTextButton
+import love.forte.tools.ff.ui.ffSharedNavModifier
+import love.forte.tools.ff.version.FfAppUpdateManager
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -37,6 +34,10 @@ fun FfHomeScreen(
     onOpenAbout: () -> Unit,
     onExit: () -> Unit,
 ) {
+    val updateManager: FfAppUpdateManager = koinInject()
+    val updateState by updateManager.state.collectAsStateWithLifecycle()
+    val showNewBadge = updateState.updateAvailable
+
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -47,11 +48,20 @@ fun FfHomeScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(
-                text = "File Flattener",
-                style = MaterialTheme.typography.headlineMedium,
-                textAlign = TextAlign.Center,
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                Text(
+                    text = "File Flattener",
+                    style = MaterialTheme.typography.headlineMedium,
+                    textAlign = TextAlign.Center,
+                )
+                if (showNewBadge) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    FfNewBadge()
+                }
+            }
             Text(
                 text = "将目录中的文件按类型筛选并硬链接平铺到目标目录",
                 style = MaterialTheme.typography.bodyMedium,
