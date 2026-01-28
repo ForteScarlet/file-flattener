@@ -95,7 +95,7 @@ abstract class ConveyorExecTask @Inject constructor(
             }
 
             add("--console=plain")
-            add("--show-log")
+            add("--show-log=error")
             add("make")
             add("--output-dir")
             add(outputDir.absolutePath)
