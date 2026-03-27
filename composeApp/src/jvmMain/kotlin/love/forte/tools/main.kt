@@ -7,6 +7,7 @@ import love.forte.tools.ff.di.FfKoin
 import love.forte.tools.file_flattener.composeapp.generated.resources.Res
 import love.forte.tools.file_flattener.composeapp.generated.resources.icon
 import org.jetbrains.compose.resources.painterResource
+import java.util.Locale
 
 fun main() {
     FfKoin.start()
@@ -21,6 +22,7 @@ fun main() {
             title = "file-flattener v${FfBuildConfig.VERSION}",
             icon = painterResource(Res.drawable.icon)
         ) {
+            this.window.locale = Locale.CHINA
             App(onExit = onExit)
         }
     }

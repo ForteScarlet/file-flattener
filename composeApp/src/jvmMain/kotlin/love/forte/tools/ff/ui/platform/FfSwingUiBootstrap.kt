@@ -15,7 +15,8 @@ object FfSwingUiBootstrap {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
         }
         runCatching {
-            JComponent.setDefaultLocale(Locale.getDefault())
+            // JComponent.setDefaultLocale(Locale.getDefault())
+            JComponent.setDefaultLocale(Locale.CHINA)
         }
     }
 }
