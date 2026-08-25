@@ -101,7 +101,7 @@ compose.desktop {
         )
 
         nativeDistributions {
-            modules("java.sql", "java.naming")
+            modules("java.sql", "java.naming", "jdk.localedata")
 
             targetFormats(
                 TargetFormat.Dmg, TargetFormat.Deb,

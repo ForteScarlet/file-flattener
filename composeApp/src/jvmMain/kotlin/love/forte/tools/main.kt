@@ -19,10 +19,10 @@ fun main() {
 
         Window(
             onCloseRequest = onExit,
-            title = "file-flattener v${FfBuildConfig.VERSION}",
+            title = "File Flattener",
             icon = painterResource(Res.drawable.icon)
         ) {
-            this.window.locale = Locale.CHINA
+            this.window.locale = Locale.getDefault(Locale.Category.DISPLAY)
             App(onExit = onExit)
         }
     }

@@ -12,12 +12,11 @@ object FfSwingUiBootstrap {
         if (!initialized.compareAndSet(false, true)) return
 
         runCatching {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
+            // Swing components created after this point should resolve strings using the system display locale.
+            JComponent.setDefaultLocale(Locale.getDefault(Locale.Category.DISPLAY))
         }
         runCatching {
-            // JComponent.setDefaultLocale(Locale.getDefault())
-            JComponent.setDefaultLocale(Locale.CHINA)
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
         }
     }
 }
-
