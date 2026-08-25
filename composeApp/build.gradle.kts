@@ -96,11 +96,24 @@ nucleus.application {
 
         targetFormats(
             TargetFormat.Dmg,
+            TargetFormat.Pkg,
             TargetFormat.Zip,
+
             TargetFormat.Nsis,
+            TargetFormat.NsisWeb,
+            TargetFormat.Msi,
+            TargetFormat.Portable,
+            TargetFormat.AppX,
+
             TargetFormat.Deb,
             TargetFormat.Rpm,
             TargetFormat.AppImage,
+            TargetFormat.Pacman,
+            TargetFormat.Snap,
+            TargetFormat.Flatpak,
+
+            TargetFormat.Tar,
+            TargetFormat.SevenZ,
         )
 
         packageName = AppConfig.APP_NAME
@@ -114,16 +127,20 @@ nucleus.application {
             "Copyright © 2026 ${AppConfig.Meta.VENDOR}. All rights reserved."
 
         linux {
+            iconFile.set(project.rootProject.file("icon.png"))
             shortcut = true
             menuGroup = AppConfig.APP_MENU_GROUP
             debMaintainer = AppConfig.Meta.DEB_MAINTAINER
         }
 
         macOS {
+            iconFile.set(project.rootProject.file("icon.icns"))
             bundleID = AppConfig.appNameWithPackage
         }
 
         windows {
+            iconFile.set(project.rootProject.file("icon.ico"))
+            shortcut = true
             menuGroup = AppConfig.APP_MENU_GROUP
             nsis {
                 oneClick = false
@@ -133,6 +150,8 @@ nucleus.application {
                 createDesktopShortcut = true
                 createStartMenuShortcut = true
                 runAfterFinish = true
+                installerIcon.set(project.rootProject.file("icon.ico"))
+                uninstallerIcon.set(project.rootProject.file("icon.ico"))
             }
         }
 
@@ -146,9 +165,9 @@ nucleus.application {
     }
 
     buildTypes.release.proguard {
-        isEnabled.set(false)
-        obfuscate.set(false)
-        optimize.set(false)
+        isEnabled.set(true)
+        obfuscate.set(true)
+        optimize.set(true)
     }
 }
 
