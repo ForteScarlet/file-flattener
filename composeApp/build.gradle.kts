@@ -64,6 +64,7 @@ kotlin {
             implementation(libs.kotlinx.coroutinesSwing)
             implementation(libs.sqldelight.jvm)
             implementation(libs.conveyor.control)
+            implementation(libs.flatlaf)
         }
     }
 }
