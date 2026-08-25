@@ -23,7 +23,7 @@
 
 ### 下载
 
-访问 [下载页面](https://fortescarlet.github.io/file-flattener/download) 获取最新版本。
+访问 [GitHub Releases](https://github.com/ForteScarlet/file-flattener/releases/latest) 获取最新版本。
 
 ## 示例
 

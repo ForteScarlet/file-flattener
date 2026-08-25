@@ -1,4 +1,4 @@
-import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import dev.nucleusframework.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -9,7 +9,7 @@ plugins {
     alias(libs.plugins.koinCompiler)
     alias(libs.plugins.buildConfig)
     alias(libs.plugins.sqldelight)
-    alias(libs.plugins.conveyor)
+    alias(libs.plugins.nucleus)
 }
 
 val appVersion = resolveAppVersion()
@@ -57,23 +57,15 @@ kotlin {
         }
 
         jvmMain.dependencies {
-            // implementation(libs.compose.desktop)
-            implementation(libs.kotlinx.coroutinesSwing)
+            implementation(libs.nucleus.application)
+            implementation(libs.nucleus.decorated.window.tao)
+            implementation(libs.nucleus.decorated.window.material3)
+            implementation(libs.nucleus.updater.runtime)
+            implementation(libs.filekit.core)
+            implementation(libs.filekit.dialogs)
             implementation(libs.sqldelight.jvm)
-            implementation(libs.conveyor.control)
-            implementation(libs.flatlaf)
         }
     }
-}
-
-dependencies {
-    // conveyor
-    linuxAmd64("org.jetbrains.compose.desktop:desktop-jvm-linux-x64:${libs.versions.compose.get()}")
-    linuxAarch64("org.jetbrains.compose.desktop:desktop-jvm-linux-arm64:${libs.versions.compose.get()}")
-    windowsAmd64("org.jetbrains.compose.desktop:desktop-jvm-windows-x64:${libs.versions.compose.get()}")
-    windowsAarch64("org.jetbrains.compose.desktop:desktop-jvm-windows-arm64:${libs.versions.compose.get()}")
-    macAmd64("org.jetbrains.compose.desktop:desktop-jvm-macos-x64:${libs.versions.compose.get()}")
-    macAarch64("org.jetbrains.compose.desktop:desktop-jvm-macos-arm64:${libs.versions.compose.get()}")
 }
 
 buildConfig {
@@ -89,62 +81,74 @@ buildConfig {
     buildConfigField("DOWNLOAD_URL", AppConfig.Meta.DOWNLOAD_URL)
 }
 
-compose.desktop {
-    application {
-        mainClass = "love.forte.tools.MainKt"
-        jvmArgs += listOf(
-            "-XX:ErrorFile=.logs/hs_err.log",
-            "-XX:-HeapDumpOnOutOfMemoryError",
-            "-XX:HeapDumpPath=.logs/dump.hprof",
-            "-XX:+UseZGC",
-            "-XX:+ZGenerational"
+nucleus.application {
+    mainClass = "love.forte.tools.MainKt"
+    jvmArgs += listOf(
+        "-XX:ErrorFile=.logs/hs_err.log",
+        "-XX:-HeapDumpOnOutOfMemoryError",
+        "-XX:HeapDumpPath=.logs/dump.hprof",
+        "-XX:+UseZGC",
+        "-XX:+ZGenerational"
+    )
+
+    nativeDistributions {
+        modules("java.sql", "java.naming", "jdk.localedata", "jdk.security.auth")
+
+        targetFormats(
+            TargetFormat.Dmg,
+            TargetFormat.Zip,
+            TargetFormat.Nsis,
+            TargetFormat.Deb,
+            TargetFormat.Rpm,
+            TargetFormat.AppImage,
         )
 
-        nativeDistributions {
-            modules("java.sql", "java.naming", "jdk.localedata")
+        packageName = AppConfig.APP_NAME
+        packageVersion = appVersion
+        vendor = AppConfig.Meta.VENDOR
+        description = AppConfig.Meta.DESCRIPTION
+        homepage = AppConfig.Meta.DOWNLOAD_URL
+        cleanupNativeLibs = true
 
-            targetFormats(
-                TargetFormat.Dmg, TargetFormat.Deb,
-                TargetFormat.Rpm, TargetFormat.Pkg,
-                TargetFormat.Msi, TargetFormat.Exe
-            )
+        copyright =
+            "Copyright © 2026 ${AppConfig.Meta.VENDOR}. All rights reserved."
 
-            packageName = AppConfig.APP_NAME
-            packageVersion = appVersion
-            vendor = AppConfig.Meta.VENDOR
-            description = AppConfig.Meta.DESCRIPTION
+        linux {
+            shortcut = true
+            menuGroup = AppConfig.APP_MENU_GROUP
+            debMaintainer = AppConfig.Meta.DEB_MAINTAINER
+        }
 
-            copyright =
-                "Copyright © 2026 ${AppConfig.Meta.VENDOR}. All rights reserved."
+        macOS {
+            bundleID = AppConfig.appNameWithPackage
+        }
 
-            linux {
-                shortcut = true
-                menuGroup = AppConfig.APP_MENU_GROUP
-                // TODO iconFile.set(project.rootDir.resolve("icon.png"))
-                debMaintainer = AppConfig.Meta.DEB_MAINTAINER
-            }
-
-            macOS {
-                bundleID = AppConfig.appNameWithPackage
-                // TODO iconFile.set(project.rootDir.resolve("icon.icns"))
-            }
-
-            windows {
-                shortcut = true
-                dirChooser = true
-                menuGroup = AppConfig.APP_MENU_GROUP
-                perUserInstall = true
-                menu = true
-                // TODO iconFile.set(project.rootDir.resolve("icon.ico"))
-                upgradeUuid = AppConfig.Meta.WINDOWS_UPGRADE_UUID
+        windows {
+            menuGroup = AppConfig.APP_MENU_GROUP
+            nsis {
+                oneClick = false
+                perMachine = false
+                allowElevation = true
+                allowToChangeInstallationDirectory = true
+                createDesktopShortcut = true
+                createStartMenuShortcut = true
+                runAfterFinish = true
             }
         }
 
-        buildTypes.release.proguard {
-            isEnabled.set(false)
-            obfuscate.set(false)
-            optimize.set(false)
+        publish {
+            github {
+                enabled = true
+                owner = "ForteScarlet"
+                repo = "file-flattener"
+            }
         }
+    }
+
+    buildTypes.release.proguard {
+        isEnabled.set(false)
+        obfuscate.set(false)
+        optimize.set(false)
     }
 }
 
@@ -159,19 +163,4 @@ sqldelight {
             deriveSchemaFromMigrations.set(true)
         }
     }
-}
-
-// https://conveyor.hydraulic.dev/21.0/configs/maven-gradle/#gradle
-tasks.register<ConveyorExecTask>("convey") {
-    dependsOn("jvmJar", "writeConveyorConfig")
-    description = "执行 Conveyor 本地打包"
-    conveyorExecutable.set(project.resolveConveyorExecutable())
-    configFile.set(rootDir.resolve("conveyor.conf"))
-}
-
-tasks.register<ConveyorExecTask>("conveyCi") {
-    dependsOn("jvmJar", "writeConveyorConfig")
-    description = "执行 Conveyor CI 打包"
-    conveyorExecutable.set(project.resolveConveyorExecutable())
-    configFile.set(rootDir.resolve("ci.conveyor.conf"))
 }

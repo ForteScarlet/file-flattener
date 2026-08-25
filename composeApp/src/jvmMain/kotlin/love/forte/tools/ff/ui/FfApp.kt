@@ -29,13 +29,13 @@ import love.forte.tools.ff.db.FfDatabaseInitState
 import love.forte.tools.ff.db.FfDatabaseManager
 import love.forte.tools.ff.storage.FfAppPaths
 import love.forte.tools.ff.storage.FfAppSettings
+import love.forte.tools.ff.storage.FfAppTheme
 import love.forte.tools.ff.storage.FfBootstrapSettings
 import love.forte.tools.ff.storage.FfBootstrapStore
 import love.forte.tools.ff.storage.FfRegistryStoreAdapter
 import love.forte.tools.ff.storage.FfSettingsStoreAdapter
 import love.forte.tools.ff.ui.screens.FfHomeScreen
 import love.forte.tools.ff.ui.screens.FfPanelScreen
-import love.forte.tools.ff.ui.theme.FfTheme
 import love.forte.tools.ff.version.FfAppUpdateManager
 import org.koin.compose.koinInject
 import java.nio.file.Files
@@ -64,10 +64,14 @@ data class FfNavState(
  * 3. 管理应用设置并持久化
  *
  * @param onExit 退出应用回调
+ * @param onThemeChanged 主题发生变化时通知窗口外壳
  */
 @Preview
 @Composable
-fun FfApp(onExit: () -> Unit = {}) {
+fun FfApp(
+    onExit: () -> Unit = {},
+    onThemeChanged: (FfAppTheme) -> Unit = {},
+) {
     val bootstrapDir = remember { FfAppPaths.defaultAppDir() }
     val bootstrapStore: FfBootstrapStore = koinInject()
     val databaseManager: FfDatabaseManager = koinInject()
@@ -114,11 +118,13 @@ fun FfApp(onExit: () -> Unit = {}) {
         // 第三步：加载设置
         if (initResult is FfDatabaseInitState.Ready) {
             settings = databaseManager.settingsRepository.load()
+            onThemeChanged(settings.theme)
         }
     }
 
     fun updateSettings(newSettings: FfAppSettings) {
         settings = newSettings
+        onThemeChanged(newSettings.theme)
         scope.launch(Dispatchers.IO) {
             databaseManager.settingsRepository.save(newSettings)
         }
@@ -140,50 +146,49 @@ fun FfApp(onExit: () -> Unit = {}) {
                 // 重新加载设置
                 if (initResult is FfDatabaseInitState.Ready) {
                     settings = databaseManager.settingsRepository.load()
+                    onThemeChanged(settings.theme)
                 }
             }
         }
     }
 
-    FfTheme(theme = settings.theme) {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background,
-        ) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                when (dbInitState) {
-                    is FfDatabaseInitState.NotInitialized,
-                    is FfDatabaseInitState.Initializing -> {
-                        // 显示加载指示器
-                        Box(modifier = Modifier.fillMaxSize()) {
-                            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                        }
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background,
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            when (dbInitState) {
+                is FfDatabaseInitState.NotInitialized,
+                is FfDatabaseInitState.Initializing -> {
+                    // 显示加载指示器
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                     }
+                }
 
-                    is FfDatabaseInitState.Failed -> {
-                        // 显示错误信息
-                        Box(modifier = Modifier.fillMaxSize()) {
-                            // TODO: 实现错误显示界面
-                            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                        }
+                is FfDatabaseInitState.Failed -> {
+                    // 显示错误信息
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        // TODO: 实现错误显示界面
+                        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                     }
+                }
 
-                    is FfDatabaseInitState.Ready -> {
-                        val registryStoreAdapter = registryStoreAdapter
-                        val settingsStoreAdapter = settingsStoreAdapter
-                        if (registryStoreAdapter != null && settingsStoreAdapter != null && userDataDir != null) {
-                            RootSharedTransition(
-                                navState = navState,
-                                appDir = userDataDir!!,
-                                registryStoreAdapter = registryStoreAdapter,
-                                settings = settings,
-                                onUpdateSettings = ::updateSettings,
-                                onUpdateUserDataDir = ::updateUserDataDir,
-                                onBackToHome = { navState = navState.copy(route = FfRootRoute.Home) },
-                                onNavigate = { route, tab -> navState = navState.copy(route = route, panelTab = tab) },
-                                onExit = onExit,
-                            )
-                        }
+                is FfDatabaseInitState.Ready -> {
+                    val registryStoreAdapter = registryStoreAdapter
+                    val settingsStoreAdapter = settingsStoreAdapter
+                    if (registryStoreAdapter != null && settingsStoreAdapter != null && userDataDir != null) {
+                        RootSharedTransition(
+                            navState = navState,
+                            appDir = userDataDir!!,
+                            registryStoreAdapter = registryStoreAdapter,
+                            settings = settings,
+                            onUpdateSettings = ::updateSettings,
+                            onUpdateUserDataDir = ::updateUserDataDir,
+                            onBackToHome = { navState = navState.copy(route = FfRootRoute.Home) },
+                            onNavigate = { route, tab -> navState = navState.copy(route = route, panelTab = tab) },
+                            onExit = onExit,
+                        )
                     }
                 }
             }

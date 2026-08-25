@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -47,12 +48,20 @@ fun FfWorkspaceScreen(
     settings: FfAppSettings,
 ) {
     val scope = rememberCoroutineScope()
+    val uriHandler = LocalUriHandler.current
     val migrationService: FfMigrationService = koinInject()
     val updateService: FfUpdateService = koinInject()
 
     // 创建并记住状态持有者
-    val state = remember(registryStoreAdapter, settings, migrationService, updateService) {
-        FfWorkspaceState(scope, registryStoreAdapter, settings, migrationService, updateService)
+    val state = remember(registryStoreAdapter, settings, migrationService, updateService, uriHandler) {
+        FfWorkspaceState(
+            scope = scope,
+            registryStoreAdapter = registryStoreAdapter,
+            settings = settings,
+            migrationService = migrationService,
+            updateService = updateService,
+            openUri = uriHandler::openUri,
+        )
     }
 
     // 初始化时加载数据
@@ -111,7 +120,7 @@ fun FfWorkspaceScreen(
                     state = state,
                     onPickSources = {
                         scope.launch {
-                            val picked = FfFileDialogs.pickDirectories("选择源目录（可多选）")
+                            val picked = FfFileDialogs.pickDirectories("选择源目录（逐个选择，取消结束）")
                             if (picked.isNotEmpty()) {
                                 state.addSourceDirs(picked)
                             }

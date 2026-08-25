@@ -3,7 +3,7 @@ androidx-lifecycle = "2.11.0-beta01"
 compose = "1.11.1"
 composeMultiplatformMaterial3 = "1.11.0-alpha07"
 junit = "4.13.2"
-kotlin = "2.4.10"
+kotlin = "2.4.0"
 kotlinx-coroutines = "1.11.0"
 # https://github.com/Kotlin/kotlinx.serialization
 kotlinx-serialization = "1.11.0"
@@ -11,12 +11,10 @@ kotlinx-serialization = "1.11.0"
 buildconfig = "6.0.10"
 # https://sqldelight.github.io/sqldelight/latest/multiplatform_sqlite/
 sqldelight = "2.3.2"
-# https://conveyor.hydraulic.dev/21.0/configs/maven-gradle/#gradle
-conveyor = "1.12"
-# https://conveyor.hydraulic.dev/21.1/control-api-jvm/
-conveyor-control = "1.1"
-# https://www.formdev.com/flatlaf/system-file-chooser/
-flatlaf = "3.7.2"
+# https://nucleusframework.dev/
+nucleus = "2.4.7"
+# https://github.com/vinceglb/FileKit
+filekit = "0.15.0"
 # https://insert-koin.io/docs/setup/koin/
 koin-bom = "4.2.2"
 koin-plugin = "1.1.0"
@@ -28,7 +26,6 @@ junit = { module = "junit:junit", version.ref = "junit" }
 androidx-lifecycle-viewmodelCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle" }
 androidx-lifecycle-runtimeCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
 kotlinx-coroutinesCore = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
-kotlinx-coroutinesSwing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 
 sqldelight-jvm = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "sqldelight" }
@@ -43,11 +40,15 @@ compose-ui-tooling-preview = { module = "org.jetbrains.compose.ui:ui-tooling-pre
 compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "compose" }
 #compose-desktop = { module = "org.jetbrains.compose.desktop:desktop", version.ref = "composeMultiplatform" }
 
-# conveyor
-conveyor-control = { module = "dev.hydraulic.conveyor:conveyor-control", version.ref = "conveyor-control" }
+# Nucleus
+nucleus-application = { module = "dev.nucleusframework:nucleus.nucleus-application", version.ref = "nucleus" }
+nucleus-decorated-window-tao = { module = "dev.nucleusframework:nucleus.decorated-window-tao", version.ref = "nucleus" }
+nucleus-decorated-window-material3 = { module = "dev.nucleusframework:nucleus.decorated-window-material3", version.ref = "nucleus" }
+nucleus-updater-runtime = { module = "dev.nucleusframework:nucleus.updater-runtime", version.ref = "nucleus" }
 
-# FlatLaf system file chooser
-flatlaf = { module = "com.formdev:flatlaf", version.ref = "flatlaf" }
+# FileKit native dialogs
+filekit-core = { module = "io.github.vinceglb:filekit-core", version.ref = "filekit" }
+filekit-dialogs = { module = "io.github.vinceglb:filekit-dialogs", version.ref = "filekit" }
 
 # koin
 koin-bom = { module = "io.insert-koin:koin-bom", version.ref = "koin-bom" }
@@ -69,4 +70,4 @@ kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", versio
 koinCompiler = { id = "io.insert-koin.compiler.plugin", version.ref = "koin-plugin" }
 buildConfig = { id = "com.github.gmazzo.buildconfig", version.ref = "buildconfig" }
 sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
-conveyor = { id = "dev.hydraulic.conveyor", version.ref = "conveyor" }
+nucleus = { id = "dev.nucleusframework", version.ref = "nucleus" }

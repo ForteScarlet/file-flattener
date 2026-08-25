@@ -26,7 +26,7 @@ Flattener** is the perfect tool for this!
 
 ### Download
 
-Visit the [Download Page](https://fortescarlet.github.io/file-flattener/download) to get the latest version.
+Visit [GitHub Releases](https://github.com/ForteScarlet/file-flattener/releases/latest) to get the latest version.
 
 ## Examples
 

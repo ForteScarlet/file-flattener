@@ -24,6 +24,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import love.forte.tools.ff.FfConstants
@@ -39,7 +40,6 @@ import love.forte.tools.ff.ui.platform.FfFileDialogs
 import love.forte.tools.file_flattener.composeapp.generated.resources.Res
 import love.forte.tools.file_flattener.composeapp.generated.resources.ic_folder_open
 import org.jetbrains.compose.resources.painterResource
-import java.awt.Desktop
 import java.nio.file.InvalidPathException
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
@@ -52,6 +52,7 @@ fun FfConfigScreen(
     onUpdateUserDataDir: (Path) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
+    val uriHandler = LocalUriHandler.current
     var userDataDirText by remember(appDir) { mutableStateOf(appDir.absolutePathString()) }
     var userDataDirError by remember { mutableStateOf<String?>(null) }
     val defaultUserDataDir = remember { FfAppPaths.defaultAppDir() }
@@ -127,7 +128,7 @@ fun FfConfigScreen(
                 })
                 Spacer(modifier = Modifier.weight(1f))
                 IconButton(onClick = {
-                    runCatching { Desktop.getDesktop().open(appDir.toFile()) }
+                    runCatching { uriHandler.openUri(appDir.toUri().toString()) }
                         .onFailure { userDataDirError = it.message ?: "无法打开目录" }
                 }) {
                     Image(painter = painterResource(Res.drawable.ic_folder_open), contentDescription = "open-user-data-dir")

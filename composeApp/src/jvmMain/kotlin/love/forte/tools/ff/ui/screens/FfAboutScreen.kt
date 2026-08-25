@@ -11,9 +11,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.nucleusframework.application.LocalNucleusApplicationScope
+import dev.nucleusframework.window.material.MaterialDecoratedWindow
+import dev.nucleusframework.window.material.MaterialTitleBar
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
@@ -28,8 +32,6 @@ import love.forte.tools.file_flattener.composeapp.generated.resources.Res
 import love.forte.tools.file_flattener.composeapp.generated.resources.icon
 import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.koinInject
-import java.awt.Desktop
-import java.net.URI
 import kotlin.time.Duration.Companion.seconds
 
 private data class RuntimeMemoryState(
@@ -51,6 +53,7 @@ fun FfAboutScreen() {
     val availableProcessors = remember { Runtime.getRuntime().availableProcessors() }
     val scope = rememberCoroutineScope()
     val updateManager: FfAppUpdateManager = koinInject()
+    val uriHandler = LocalUriHandler.current
 
     val memoryState by flow {
         while (true) {
@@ -63,6 +66,7 @@ fun FfAboutScreen() {
     val showNewBadge = updateState.updateAvailable
     val isChecking = updateState.isChecking
     val canTriggerUpdate = updateState.canTriggerUpdate
+    val isInstalling = updateState.isInstalling
     val updateErrorMessage = updateState.errorMessage
 
     FfCenteredContentLayout {
@@ -105,9 +109,9 @@ fun FfAboutScreen() {
                 )
                 if (showNewBadge) {
                     FfPrimaryButton(
-                        text = "更新",
-                        enabled = canTriggerUpdate,
-                        onClick = { updateManager.triggerUpdate() },
+                        text = if (isInstalling) "更新中" else "更新",
+                        enabled = canTriggerUpdate && !isInstalling,
+                        onClick = { scope.launch { updateManager.triggerUpdate() } },
                     )
                 }
             }
@@ -126,7 +130,7 @@ fun FfAboutScreen() {
             Spacer(modifier = Modifier.height(6.dp))
             Text(
                 modifier = Modifier.clickable {
-                    runCatching { Desktop.getDesktop().browse(URI(FfBuildConfig.GITHUB_URL)) }
+                    runCatching { uriHandler.openUri(FfBuildConfig.GITHUB_URL) }
                 },
                 text = FfBuildConfig.GITHUB_URL,
                 style = MaterialTheme.typography.bodySmall.copy(
@@ -185,20 +189,21 @@ private fun formatBytes(bytes: Long): String {
 
 @Composable
 private fun FfSystemPropertiesWindow(onClose: () -> Unit) {
-    androidx.compose.ui.window.Window(
-        onCloseRequest = onClose,
-        title = "系统属性",
-        state = androidx.compose.ui.window.rememberWindowState(
-            width = 700.dp,
-            height = 500.dp,
-        ),
-    ) {
-        val properties = remember {
-            System.getProperties().entries
-                .map { (k, v) -> k.toString() to v.toString() }
-        }
+    with(LocalNucleusApplicationScope.current) {
+        MaterialDecoratedWindow(
+            onCloseRequest = onClose,
+            title = "系统属性",
+            state = androidx.compose.ui.window.rememberWindowState(
+                width = 700.dp,
+                height = 500.dp,
+            ),
+        ) {
+            MaterialTitleBar { Text("系统属性") }
+            val properties = remember {
+                System.getProperties().entries
+                    .map { (k, v) -> k.toString() to v.toString() }
+            }
 
-        MaterialTheme {
             Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
                 Text(
                     text = "系统属性（共 ${properties.size} 项）",
@@ -213,21 +218,22 @@ private fun FfSystemPropertiesWindow(onClose: () -> Unit) {
 
 @Composable
 private fun FfEnvVariablesWindow(onClose: () -> Unit) {
-    androidx.compose.ui.window.Window(
-        onCloseRequest = onClose,
-        title = "环境变量",
-        state = androidx.compose.ui.window.rememberWindowState(
-            width = 700.dp,
-            height = 500.dp,
-        ),
-    ) {
-        val envVars = remember {
-            System.getenv().entries
-                .map { (k, v) -> k to v }
-                .sortedBy { it.first }
-        }
+    with(LocalNucleusApplicationScope.current) {
+        MaterialDecoratedWindow(
+            onCloseRequest = onClose,
+            title = "环境变量",
+            state = androidx.compose.ui.window.rememberWindowState(
+                width = 700.dp,
+                height = 500.dp,
+            ),
+        ) {
+            MaterialTitleBar { Text("环境变量") }
+            val envVars = remember {
+                System.getenv().entries
+                    .map { (k, v) -> k to v }
+                    .sortedBy { it.first }
+            }
 
-        MaterialTheme {
             Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
                 Text(
                     text = "环境变量（共 ${envVars.size} 项）",

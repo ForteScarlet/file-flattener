@@ -4,12 +4,13 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import love.forte.tools.ff.FfConstants
 import org.koin.core.annotation.Single
-import java.awt.Desktop
 import java.io.RandomAccessFile
 import java.nio.channels.FileLock
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
+import java.util.concurrent.TimeUnit
+import java.util.Locale
 import java.util.UUID
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
@@ -237,16 +238,7 @@ class FfUpdateService(
      * @return true 表示成功
      */
     private fun moveToTrash(dir: Path): Boolean {
-        if (!dir.exists()) return true
-
-        // 尝试使用系统回收站
-        return if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.MOVE_TO_TRASH)) {
-            runCatching {
-                Desktop.getDesktop().moveToTrash(dir.toFile())
-            }.getOrDefault(false)
-        } else {
-            false
-        }
+        return FfTrashService.moveToTrash(dir)
     }
 
     /**
@@ -280,4 +272,66 @@ class FfUpdateService(
         }
         dir.deleteIfExists()
     }
+}
+
+/**
+ * Uses each platform's native trash command without initializing AWT's desktop toolkit.
+ */
+private object FfTrashService {
+    fun moveToTrash(path: Path): Boolean {
+        if (!path.exists()) return true
+
+        val osName = System.getProperty("os.name").lowercase(Locale.ROOT)
+        return when {
+            osName.contains("windows") -> moveToWindowsRecycleBin(path)
+            osName.contains("mac") || osName.contains("darwin") ->
+                runCommand(
+                    listOf("/usr/bin/osascript", "-e", macOsTrashScript(path)),
+                )
+            else ->
+                runCommand(listOf("gio", "trash", path.toString())) ||
+                    runCommand(listOf("trash-put", path.toString()))
+        }
+    }
+
+    private fun moveToWindowsRecycleBin(path: Path): Boolean {
+        val escapedPath = path.toAbsolutePath().normalize().toString().replace("'", "''")
+        val command =
+            "Add-Type -AssemblyName Microsoft.VisualBasic; " +
+                "[Microsoft.VisualBasic.FileIO.FileSystem]::DeleteDirectory(" +
+                "'$escapedPath', " +
+                "[Microsoft.VisualBasic.FileIO.UIOption]::OnlyErrorDialogs, " +
+                "[Microsoft.VisualBasic.FileIO.RecycleOption]::SendToRecycleBin)"
+
+        return runCommand(
+            listOf(
+                "powershell.exe",
+                "-NoProfile",
+                "-NonInteractive",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-Command",
+                command,
+            ),
+        )
+    }
+
+    private fun macOsTrashScript(path: Path): String {
+        val escapedPath = path.toAbsolutePath().normalize().toString()
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+        return "tell application \"Finder\" to delete POSIX file \"$escapedPath\""
+    }
+
+    private fun runCommand(command: List<String>): Boolean = runCatching {
+        val process = ProcessBuilder(command)
+            .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+            .redirectError(ProcessBuilder.Redirect.DISCARD)
+            .start()
+        if (!process.waitFor(30, TimeUnit.SECONDS)) {
+            process.destroyForcibly()
+            return@runCatching false
+        }
+        process.exitValue() == 0
+    }.getOrDefault(false)
 }

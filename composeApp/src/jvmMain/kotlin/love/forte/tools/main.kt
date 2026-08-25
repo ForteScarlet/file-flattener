@@ -1,29 +1,21 @@
 package love.forte.tools
 
-import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.application
-import love.forte.tools.ff.FfBuildConfig
+import dev.nucleusframework.application.NucleusBackend
+import dev.nucleusframework.application.nucleusApplication
 import love.forte.tools.ff.di.FfKoin
-import love.forte.tools.file_flattener.composeapp.generated.resources.Res
-import love.forte.tools.file_flattener.composeapp.generated.resources.icon
-import org.jetbrains.compose.resources.painterResource
 import java.util.Locale
 
-fun main() {
+fun main(args: Array<String>) {
     FfKoin.start()
-    application {
+    nucleusApplication(
+        args = args,
+        backend = NucleusBackend.Tao,
+        defaultLocale = Locale.getDefault(Locale.Category.DISPLAY),
+    ) {
         val onExit = {
             FfKoin.stop()
             exitApplication()
         }
-
-        Window(
-            onCloseRequest = onExit,
-            title = "File Flattener",
-            icon = painterResource(Res.drawable.icon)
-        ) {
-            this.window.locale = Locale.getDefault(Locale.Category.DISPLAY)
-            App(onExit = onExit)
-        }
+        FfWindow(onExit = onExit)
     }
 }

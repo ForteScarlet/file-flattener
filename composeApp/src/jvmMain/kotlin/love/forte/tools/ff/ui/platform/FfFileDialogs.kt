@@ -1,30 +1,45 @@
 package love.forte.tools.ff.ui.platform
 
-import com.formdev.flatlaf.util.SystemFileChooser
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.swing.Swing
-import kotlinx.coroutines.withContext
+import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.path
+import io.github.vinceglb.filekit.dialogs.FileKitDialogSettings
+import io.github.vinceglb.filekit.dialogs.openDirectoryPicker
+import kotlinx.coroutines.CancellationException
 import java.nio.file.Path
 
 object FfFileDialogs {
-    suspend fun pickDirectories(title: String): List<Path> = withContext(Dispatchers.Swing) {
-        FfSwingUiBootstrap.ensureInitialized()
-        val chooser = directoryChooser(title, multiSelectionEnabled = true)
-        if (chooser.showOpenDialog(null) != SystemFileChooser.APPROVE_OPTION) return@withContext emptyList()
-        chooser.selectedFiles.orEmpty().map { it.toPath() }
-    }
+    /**
+     * FileKit's native directory picker selects one directory at a time. Reopen it after each
+     * selection so the existing multi-source workflow remains available without Swing.
+     */
+    suspend fun pickDirectories(title: String): List<Path> {
+        val selected = linkedSetOf<Path>()
+        val settings = FileKitDialogSettings(title = title)
 
-    suspend fun pickDirectory(title: String): Path? = withContext(Dispatchers.Swing) {
-        FfSwingUiBootstrap.ensureInitialized()
-        val chooser = directoryChooser(title, multiSelectionEnabled = false)
-        if (chooser.showOpenDialog(null) != SystemFileChooser.APPROVE_OPTION) return@withContext null
-        chooser.selectedFiles.orEmpty().firstOrNull()?.toPath()
-    }
+        while (true) {
+            val directory = try {
+                FileKit.openDirectoryPicker(dialogSettings = settings)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                null
+            } ?: break
 
-    private fun directoryChooser(title: String, multiSelectionEnabled: Boolean): SystemFileChooser =
-        SystemFileChooser().apply {
-            dialogTitle = title
-            fileSelectionMode = SystemFileChooser.DIRECTORIES_ONLY
-            isMultiSelectionEnabled = multiSelectionEnabled
+            selected.add(Path.of(directory.path).toAbsolutePath().normalize())
         }
+
+        return selected.toList()
+    }
+
+    suspend fun pickDirectory(title: String): Path? {
+        val settings = FileKitDialogSettings(title = title)
+        return try {
+            FileKit.openDirectoryPicker(dialogSettings = settings)
+                ?.let { Path.of(it.path).toAbsolutePath().normalize() }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            null
+        }
+    }
 }

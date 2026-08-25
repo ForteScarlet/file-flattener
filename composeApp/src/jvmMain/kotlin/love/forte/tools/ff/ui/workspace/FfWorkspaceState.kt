@@ -18,7 +18,6 @@ import love.forte.tools.ff.FfDefaults
 import love.forte.tools.ff.fs.*
 import love.forte.tools.ff.storage.FfAppSettings
 import love.forte.tools.ff.storage.FfRegistryStoreAdapter
-import java.awt.Desktop
 import java.nio.file.Path
 import java.util.*
 import kotlin.io.path.absolutePathString
@@ -94,6 +93,7 @@ data class FfMigrationTaskUi(
  * @param settings 应用设置
  * @param migrationService 迁移服务
  * @param updateService 更新服务
+ * @param openUri 打开本地目录 URI 的平台回调
  */
 @Stable
 class FfWorkspaceState(
@@ -102,6 +102,7 @@ class FfWorkspaceState(
     private val settings: FfAppSettings,
     private val migrationService: FfMigrationService,
     private val updateService: FfUpdateService,
+    private val openUri: (String) -> Unit,
 ) {
     // region 受管目标列表
     private val _managedTargets = mutableStateListOf<FfManagedTargetEntry>()
@@ -460,7 +461,7 @@ class FfWorkspaceState(
     /** 打开目标目录 */
     fun openTargetDir() {
         val target = selectedTargetDir ?: return
-        runCatching { Desktop.getDesktop().open(target.toFile()) }
+        runCatching { openUri(target.toUri().toString()) }
             .onFailure { showMessage(it.message ?: "无法打开目录") }
     }
 
@@ -477,7 +478,7 @@ class FfWorkspaceState(
             return
         }
         sources.forEach { src ->
-            runCatching { Desktop.getDesktop().open(src.toFile()) }
+            runCatching { openUri(src.toUri().toString()) }
                 .onFailure { showMessage(it.message ?: "无法打开源目录：${src.fileName}") }
         }
     }
