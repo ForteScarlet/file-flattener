@@ -1,17 +1,17 @@
 [versions]
-androidx-lifecycle = "2.10.0-alpha06"
-compose = "1.10.0"
-composeMultiplatformMaterial3 = "1.10.0-alpha05"
+androidx-lifecycle = "2.11.0-beta01"
+compose = "1.11.1"
+composeMultiplatformMaterial3 = "1.11.0-alpha07"
 junit = "4.13.2"
-kotlin = "2.3.0"
-ksp = "2.3.4"
-kotlinx-coroutines = "1.10.2"
+kotlin = "2.4.10"
+ksp = "2.3.10"
+kotlinx-coroutines = "1.11.0"
 # https://github.com/Kotlin/kotlinx.serialization
-kotlinx-serialization = "1.7.3"
+kotlinx-serialization = "1.11.0"
 # https://github.com/gmazzo/gradle-buildconfig-plugin
-buildconfig = "6.0.7"
+buildconfig = "6.0.10"
 # https://sqldelight.github.io/sqldelight/latest/multiplatform_sqlite/
-sqldelight = "2.2.1"
+sqldelight = "2.3.2"
 # https://conveyor.hydraulic.dev/21.0/configs/maven-gradle/#gradle
 conveyor = "1.12"
 # https://conveyor.hydraulic.dev/21.1/control-api-jvm/
