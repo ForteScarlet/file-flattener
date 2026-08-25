@@ -6,6 +6,7 @@ import love.forte.tools.ff.db.FfDatabaseManager
 import love.forte.tools.ff.storage.FfAppPaths
 import love.forte.tools.ff.storage.FfBootstrapStore
 import org.koin.core.annotation.ComponentScan
+import org.koin.core.annotation.KoinApplication
 import org.koin.core.annotation.Module
 import org.koin.core.annotation.Single
 
@@ -25,3 +26,6 @@ class FfCoreModule {
     @Single
     fun provideBootstrapStore(): FfBootstrapStore = FfBootstrapStore(FfAppPaths.defaultAppDir())
 }
+
+@KoinApplication(modules = [FfCoreModule::class])
+class FfApplication

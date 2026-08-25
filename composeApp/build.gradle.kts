@@ -6,7 +6,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlinSerialization)
-    alias(libs.plugins.ksp)
+    alias(libs.plugins.koinCompiler)
     alias(libs.plugins.buildConfig)
     alias(libs.plugins.sqldelight)
     alias(libs.plugins.conveyor)
@@ -45,6 +45,7 @@ kotlin {
             implementation(libs.kotlinx.coroutinesCore)
             // Koin
             implementation(project.dependencies.platform(libs.koin.bom))
+            implementation(libs.koin.core)
             implementation(libs.koin.compose)
             implementation(libs.koin.compose.viewmodel)
             // Koin Annotations
@@ -66,9 +67,6 @@ kotlin {
 }
 
 dependencies {
-    // koin
-    platform(libs.koin.bom)
-    add("kspJvm", libs.koin.ksp.compiler)
     // conveyor
     linuxAmd64("org.jetbrains.compose.desktop:desktop-jvm-linux-x64:${libs.versions.compose.get()}")
     linuxAarch64("org.jetbrains.compose.desktop:desktop-jvm-linux-arm64:${libs.versions.compose.get()}")
