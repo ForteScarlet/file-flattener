@@ -67,10 +67,28 @@ abstract class ConveyorExecTask @Inject constructor(
     @get:Input
     abstract val subCommand: Property<String>
 
+    /**
+     * 执行失败后的最大重试次数（不含首次执行）。
+     *
+     * Conveyor 在生成 "site" 时会尝试从 `app.site.base-url`（例如 GitHub Pages）下载历史版本的安装包，
+     * 用于生成增量更新（delta）文件。该下载偶发会因为站点临时不可用（如 503）而失败，
+     * 属于瞬时性网络问题，重试通常即可恢复，因此这里加入了重试机制。
+     */
+    @get:Input
+    abstract val maxRetries: Property<Int>
+
+    /**
+     * 每次重试前的等待时间（秒）。
+     */
+    @get:Input
+    abstract val retryDelaySeconds: Property<Long>
+
     init {
         outputDirectory.convention(layout.buildDirectory.dir("packages"))
         subCommand.convention("site")
         extraArgs.convention(emptyList())
+        maxRetries.convention(2)
+        retryDelaySeconds.convention(10)
     }
 
     @TaskAction
@@ -104,12 +122,38 @@ abstract class ConveyorExecTask @Inject constructor(
             addAll(extraArgs.get())
         }
 
-        execOperations.exec {
-            workingDir(layout.projectDirectory)
-            environment("JAVA_HOME", javaHome.absolutePath)
-            commandLine(commandLineArgs)
-            standardOutput = System.out
-            errorOutput = System.err
+        val attempts = maxRetries.get() + 1
+        val delaySeconds = retryDelaySeconds.get()
+        for (attempt in 1..attempts) {
+            if (attempt > 1) {
+                // 清理上一次失败留下的部分产物，避免 conveyor 因 "output dir changed" 拒绝覆盖。
+                fileSystemOperations.delete {
+                    delete(outputDir)
+                }
+            }
+
+            val result = execOperations.exec {
+                workingDir(layout.projectDirectory)
+                environment("JAVA_HOME", javaHome.absolutePath)
+                commandLine(commandLineArgs)
+                standardOutput = System.out
+                errorOutput = System.err
+                isIgnoreExitValue = true
+            }
+
+            if (result.exitValue == 0) {
+                return
+            }
+
+            if (attempt == attempts) {
+                result.assertNormalExitValue()
+            }
+
+            logger.warn(
+                "Conveyor 执行失败（第 $attempt/$attempts 次尝试，退出码 ${result.exitValue}），" +
+                    "${delaySeconds}s 后重试……"
+            )
+            Thread.sleep(delaySeconds * 1000)
         }
     }
 }
