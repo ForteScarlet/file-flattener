@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## v1.1.0
+### 项目构建与发布
+
+- **发布流程调整**：调整发布流程，切换为使用 [Nucleus](https://nucleusframework.dev/) 进行打包与发布。
+
 ## v1.0.4
 
 ### 新增与改进
