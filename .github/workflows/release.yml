@@ -29,6 +29,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # Keep CI tooling aligned with the Nucleus Gradle plugin declared in
+      # gradle/libs.versions.toml. setup-nucleus only prepares the build host;
+      # it has no bearing on which files are published.
       - uses: NucleusFramework/Nucleus/.github/actions/setup-nucleus@v2.4.7
         with:
           java-version: '25'
@@ -92,6 +95,37 @@ jobs:
             echo "RELEASE_CHANNEL=$CHANNEL"
             echo "RELEASE_TYPE=$RELEASE_TYPE"
           } >> "$GITHUB_ENV"
+
+      # Nucleus's publish-release action uses `gh release upload --clobber`.
+      # That replaces matching names but does not remove assets uploaded by an
+      # earlier, incorrect run of the same tag. Prune first so reruns are
+      # idempotent and the staged artifact boundary below is authoritative.
+      - name: Remove stale assets from existing release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG does not exist yet; no stale assets to remove."
+            exit 0
+          fi
+
+          mapfile -t ASSET_NAMES < <(
+            gh release view "$TAG" --json assets --jq '.assets[].name'
+          )
+          if [ "${#ASSET_NAMES[@]}" -eq 0 ]; then
+            echo "Release $TAG has no existing assets."
+            exit 0
+          fi
+
+          printf 'Removing %d stale asset(s) from release %s.\n' \
+            "${#ASSET_NAMES[@]}" "$TAG"
+          for asset_name in "${ASSET_NAMES[@]}"; do
+            gh release delete-asset "$TAG" "$asset_name" --yes
+          done
 
       - name: Generate Nucleus update feeds
         uses: ./.github/actions/generate-update-yml

@@ -1,5 +1,10 @@
+import com.sun.imageio.plugins.jpeg.JPEG.vendor
 import dev.nucleusframework.desktop.application.dsl.TargetFormat
+import org.gradle.declarative.dsl.schema.FqName.Empty.packageName
+import org.gradle.internal.impldep.org.bouncycastle.asn1.x500.style.RFC4519Style.owner
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import sun.jvmstat.monitor.MonitoredVmUtil.mainClass
+import kotlin.text.Typography.copyright
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
