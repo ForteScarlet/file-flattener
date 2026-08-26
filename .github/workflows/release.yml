@@ -45,10 +45,18 @@ jobs:
             -PappVersion="$VERSION" \
             --stacktrace --no-daemon
 
+      - name: Stage publishable release assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash .github/scripts/stage-release-assets.sh \
+            composeApp/build/compose/binaries/main-release \
+            release-assets
+
       - uses: actions/upload-artifact@v7
         with:
           name: release-assets-${{ runner.os }}-${{ matrix.arch }}
-          path: composeApp/build/compose/binaries/main-release/**/*
+          path: release-assets/**/*
           if-no-files-found: error
 
   publish:
