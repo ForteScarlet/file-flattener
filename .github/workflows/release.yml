@@ -61,7 +61,7 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           pattern: release-assets-*
-          merge-multiple: true
+          merge-multiple: false
           path: release-assets
 
       - name: Resolve release channel
