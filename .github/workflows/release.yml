@@ -27,13 +27,14 @@ jobs:
           - { os: macos-15-intel, arch: amd64 }
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: NucleusFramework/Nucleus/.github/actions/setup-nucleus@main
+      - uses: NucleusFramework/Nucleus/.github/actions/setup-nucleus@v2.4.7
         with:
-          # The project is deliberately staying on the JVM/JDK 21 path for now.
-          jbr-version: '21'
+          java-version: '25'
           packaging-tools: 'true'
+          flatpak: 'true'
+          snap: 'true'
 
       - name: Build release packages
         shell: bash
@@ -44,7 +45,7 @@ jobs:
             -PappVersion="$VERSION" \
             --stacktrace --no-daemon
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: release-assets-${{ runner.os }}-${{ matrix.arch }}
           path: composeApp/build/compose/binaries/main-release/**/*
@@ -56,7 +57,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download packaged artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: release-assets-*
           merge-multiple: true
@@ -83,14 +84,16 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: Generate Nucleus update feeds
-        uses: NucleusFramework/Nucleus/.github/actions/generate-update-yml@main
+        uses: NucleusFramework/Nucleus/.github/actions/generate-update-yml@v2.4.7
         with:
           artifacts-path: release-assets
           version: ${{ env.RELEASE_VERSION }}
           channel: ${{ env.RELEASE_CHANNEL }}
 
       - name: Publish release and update feeds
-        uses: NucleusFramework/Nucleus/.github/actions/publish-release@main
+        uses: NucleusFramework/Nucleus/.github/actions/publish-release@v2.4.7
+        env:
+          GH_TOKEN: ${{ github.token }}
         with:
           artifacts-path: release-assets
           tag: ${{ github.ref_name }}

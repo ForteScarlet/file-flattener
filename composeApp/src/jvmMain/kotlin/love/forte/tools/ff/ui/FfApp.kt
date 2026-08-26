@@ -1,39 +1,22 @@
 package love.forte.tools.ff.ui
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.ContentTransform
-import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
+import androidx.compose.animation.*
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import dev.nucleusframework.aot.runtime.AotRuntime
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import love.forte.tools.ff.db.FfDatabaseInitState
 import love.forte.tools.ff.db.FfDatabaseManager
-import love.forte.tools.ff.storage.FfAppPaths
-import love.forte.tools.ff.storage.FfAppSettings
-import love.forte.tools.ff.storage.FfAppTheme
-import love.forte.tools.ff.storage.FfBootstrapSettings
-import love.forte.tools.ff.storage.FfBootstrapStore
-import love.forte.tools.ff.storage.FfRegistryStoreAdapter
-import love.forte.tools.ff.storage.FfSettingsStoreAdapter
+import love.forte.tools.ff.storage.*
 import love.forte.tools.ff.ui.screens.FfHomeScreen
 import love.forte.tools.ff.ui.screens.FfPanelScreen
 import love.forte.tools.ff.version.FfAppUpdateManager
@@ -77,6 +60,7 @@ fun FfApp(
     val databaseManager: FfDatabaseManager = koinInject()
     val updateManager: FfAppUpdateManager = koinInject()
     val scope = rememberCoroutineScope()
+    val isAotTraining = AotRuntime.isTraining()
 
     var settings by remember { mutableStateOf(FfAppSettings()) }
     var navState by remember { mutableStateOf(FfNavState()) }
@@ -103,6 +87,7 @@ fun FfApp(
     }
 
     LaunchedEffect(Unit) {
+        if (isAotTraining) return@LaunchedEffect
         updateManager.checkForUpdates()
     }
 

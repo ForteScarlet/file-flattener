@@ -19,13 +19,11 @@ version = appVersion
 
 kotlin {
     jvmToolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-        @Suppress("UnstableApiUsage")
-        vendor.set(JvmVendorSpec.JETBRAINS)
+        languageVersion.set(JavaLanguageVersion.of(25))
     }
     jvm {
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_21)
+            jvmTarget.set(JvmTarget.JVM_25)
         }
     }
 
@@ -88,10 +86,10 @@ nucleus.application {
         "-XX:-HeapDumpOnOutOfMemoryError",
         "-XX:HeapDumpPath=.logs/dump.hprof",
         "-XX:+UseZGC",
-        "-XX:+ZGenerational"
     )
 
     nativeDistributions {
+        enableAotCache = true
         modules("java.sql", "java.naming", "jdk.localedata", "jdk.security.auth")
 
         targetFormats(
