@@ -79,6 +79,11 @@ object FfDatabaseFactory {
         // 确保应用数据目录存在
         Files.createDirectories(appDir)
 
+        // 尝试手动加载驱动以解决 runRelease/AOT 模式下 DriverManager 找不到驱动的问题
+        runCatching {
+            Class.forName("org.sqlite.JDBC")
+        }
+
         val dbPath = appDir.resolve(DB_FILE_NAME)
         val jdbcUrl = "jdbc:sqlite:${dbPath.toAbsolutePath()}"
 
