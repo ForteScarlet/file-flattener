@@ -1,11 +1,14 @@
 package love.forte.tools.ff.ui
 
 import androidx.compose.animation.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -142,12 +145,12 @@ fun FfApp(
         color = MaterialTheme.colorScheme.background,
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            when (dbInitState) {
+            when (val state = dbInitState) {
                 is FfDatabaseInitState.NotInitialized,
                 is FfDatabaseInitState.Initializing -> {
                     // 显示加载指示器
                     Box(modifier = Modifier.fillMaxSize()) {
-                        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                        LoadingIndicator(modifier = Modifier.align(Alignment.Center))
                     }
                 }
 
@@ -155,7 +158,14 @@ fun FfApp(
                     // 显示错误信息
                     Box(modifier = Modifier.fillMaxSize()) {
                         // TODO: 实现错误显示界面
-                        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                        Row(
+                            modifier = Modifier.align(Alignment.Center),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            LoadingIndicator()
+                            Text(text = "Error: ${state.error.localizedMessage}")
+                        }
                     }
                 }
 

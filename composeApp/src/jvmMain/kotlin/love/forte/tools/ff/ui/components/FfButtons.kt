@@ -9,7 +9,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -91,10 +93,7 @@ fun FfLoadingOutlinedButton(
         colors = ButtonDefaults.outlinedButtonColors(),
     ) {
         if (loading) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(16.dp),
-                strokeWidth = 2.dp,
-            )
+            LoadingIndicator(modifier = Modifier.size(16.dp))
             Spacer(modifier = Modifier.width(FfIconSpacer))
         }
         Text(if (loading) loadingText else text)
